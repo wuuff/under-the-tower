@@ -77,6 +77,7 @@ void setup() {
 
 #define WORLD 0
 #define COMBAT 1
+#define DUNGEON 2
 
 byte mode = WORLD;
 
@@ -91,6 +92,9 @@ void loop() {
 
       //gb.display.print(random(3));
       //else dudeanimation = 0;
+    }else if( mode == DUNGEON ){
+      step_dungeon();
+      draw_dungeon();
     }else{ //mode is COMBAT
       //do_combat();  //TODO: Restore combat
     }

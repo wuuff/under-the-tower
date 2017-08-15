@@ -5,7 +5,7 @@
 #define WINDOW 4
 #define STREETLIGHT 5
 #define POLE 6
-#define DOOR 7
+#define DOOR 4
 
 #define DRAIN 5
 #define FLOW 7
@@ -19,6 +19,19 @@
 #define LEFT 3
 #define RIGHT 4
 
+extern byte dudeanimation;
 extern byte dudeframe;
+extern byte worldframe;
+extern uint16_t dudex;
+extern uint16_t dudey;
 
+extern const byte dude[];
+extern const byte dudedn1[];
+extern const byte dudedn2[];
+extern const byte dudeup[];
+extern const byte dudeup1[];
+extern const byte dudeup2[];
+extern const byte dudert[];
+extern const byte dudert1[];
+extern const byte dudert2[];
 

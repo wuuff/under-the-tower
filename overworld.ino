@@ -782,9 +782,13 @@ void draw_world(){
 }
 
 uint8_t test_world_collision(uint8_t dir){
+  uint8_t tile = 0;
   if( dir == UP ){
-    return pgm_read_byte(&world[((dudey-1)/8)*64+dudex/8]) != 0 ||
-      pgm_read_byte(&world[((dudey-1)/8)*64+(dudex+7)/8]) != 0;
+    tile = pgm_read_byte(&world[((dudey-1)/8)*64+dudex/8]);
+    if( tile != DOOR && pgm_read_byte(&world[((dudey-1)/8)*64+(dudex+7)/8]) )
+      return pgm_read_byte(&world[((dudey-1)/8)*64+(dudex+7)/8]);
+    else
+      return tile;
   }else if( dir == DOWN ){
     return pgm_read_byte(&world[((dudey+8)/8)*64+dudex/8]) ||
       pgm_read_byte(&world[((dudey+8)/8)*64+(dudex+7)/8]) != 0;
@@ -804,20 +808,27 @@ void step_world(){
   
   dudeframe++;
   
-  if(gb.buttons.repeat(BTN_UP,1) && !test_world_collision(UP)){
-    //Overwrite standing sprite
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup1);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup2);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup);
+  if( gb.buttons.repeat(BTN_UP,1) ){
+    uint8_t collision = 0;
+    collision = test_world_collision(UP);
+    if( collision == DOOR ){
+      mode = DUNGEON;
     }
-    
-    dudey--;
-    dudeanimation = UP;
-    moved = 1;
-    //try_combat();  TODO: Restore combat
+    if( !collision ){
+      //Overwrite standing sprite
+      if(dudeframe/2 == 0){
+        gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup1);
+      }else if(dudeframe/2 == 2){
+        gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup2);
+      }else{
+        gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup);
+      }
+      
+      dudey--;
+      dudeanimation = UP;
+      moved = 1;
+      //try_combat();  TODO: Restore combat
+    }
   }
   else if(gb.buttons.repeat(BTN_DOWN,1) && !test_world_collision(DOWN)){
     //Overwrite standing sprite
