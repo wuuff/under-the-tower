@@ -2,6 +2,15 @@
 char dungeon_map[16][16];
 uint8_t dungeon_generated = 0;
 
+#define DUN_STACK 0 // A stack of rooms
+#define DUN_ZIGZAG 1 // Zig-zagging rooms, ascending, starting to the left
+#define DUN_ZIGZAGR 2 // Zig-zagging rooms, ascending, starting to the right
+#define DUN_SPLIT 3 // Rooms to the left AND right
+#define DUN_SPIRAL 4 // Spiral of rooms, ascending, 4 per floor
+
+#define DUN_END_DOOR 0 // Dungeon ends in an exit door 
+#define DUN_END_BOSS 1 // Dungeon ends in a boss
+
 byte cache_originx = 0;
 byte cache_originy = 0;
 
@@ -30,6 +39,33 @@ B11111111,
 B10000001,
 B10000001,
 B11111111,
+8,8,
+B01111110,
+B10000001,
+B10000001,
+B11000011,
+B10111101,
+B10000001,
+B10000001,
+B10000001,
+8,8,
+B10000001,
+B10000001,
+B10000001,
+B11100111,
+B10111101,
+B10000001,
+B10111101,
+B11000011,
+8,8,
+B00000000,
+B00000000,
+B01111110,
+B10000001,
+B01111110,
+B00011000,
+B00111100,
+B01000010,
 };
 
 void draw_dungeon(){
@@ -286,12 +322,40 @@ void mapgen(char map[][MAPSIZE], int mapwidth, int mapheight, int startx, int st
     }
 }
 
+uint8_t check_proximity(char map[][MAPSIZE], uint8_t i, uint8_t j, uint8_t extra){
+  uint8_t k,m;
+  for( k = i-2; k <= i+1+extra; k++ ){
+    for( m = j-1; m <= j+1; m++ ){
+      if( map[k][m] == 1 ){
+        return 0;
+      }
+    }
+  }
+  return 1;
+}
+
+#define DECORATION_CHANCE 25
 void mapdetail(char map[][MAPSIZE], int width, int height){
-  int i,j;
-  for( i = 0; i < height-1; i++ ){
-    for( j = 0; j < width; j++ ){
-      if( map[i][j] == 1 && map[i+1][j] == 0 ){
-        map[i+1][j] = 2;
+  uint8_t i,j,k,m;
+  //Avoid checking the boundary tiles
+  for( i = 1; i < height-1; i++ ){
+    for( j = 1; j < width-1; j++ ){
+      //Place a sideways wall under each wall top
+      if( map[i-1][j] == 1 && map[i][j] == 0 ){
+        map[i][j] = 2;
+      }
+      //Check if we want to put something decorative
+      if( i > 1 && map[i][j] != 1 && DECORATION_CHANCE > (rand()%100) ){
+        if( 50 > (rand()%100) ){
+          if( check_proximity( map, i, j, 0 ) ){
+            map[i][j] = 5;
+          }
+        }else{
+          if( check_proximity( map, i, j, 1 ) ){
+            map[i][j] = 3;
+            map[i+1][j] = 4;
+          }
+        }
       }
     }
   }
