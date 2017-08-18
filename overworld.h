@@ -35,3 +35,4 @@ extern const byte dudert[];
 extern const byte dudert1[];
 extern const byte dudert2[];
 
+extern uint8_t dungeonx,dungeony;

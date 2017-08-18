@@ -812,7 +812,21 @@ void step_world(){
     uint8_t collision = 0;
     collision = test_world_collision(UP);
     if( collision == DOOR ){
+      //Check whether we collided with a door based on our top left or top right
+      collision = pgm_read_byte(&world[((dudey-1)/8)*64+dudex/8]);
+      //Depending on which, we set dungeon position to tile x/y of door.
+      //This signals to the dungeon generator which dungeon we want to enter.
+      if( collision == DOOR ){
+        dungeonx = dudex/8;
+        dungeony = (dudey-1/8);
+      }else{
+        dungeonx = dudex+7/8;
+        dungeony = (dudey-1/8);
+      }
       mode = DUNGEON;
+      dungeon_generated = 0;
+      dungeon_level = 0;
+      return;
     }
     if( !collision ){
       //Overwrite standing sprite

@@ -1,6 +1,8 @@
 #include "overworld.h"
 char dungeon_map[16][16];
+uint8_t dungeonx,dungeony;//Used to identify dungeon
 uint8_t dungeon_generated = 0;
+uint8_t dungeon_level = 0;
 
 #define DUN_STACK 0 // A stack of rooms
 #define DUN_ZIGZAG 1 // Zig-zagging rooms, ascending, starting to the left
@@ -8,13 +10,39 @@ uint8_t dungeon_generated = 0;
 #define DUN_SPLIT 3 // Rooms to the left AND right
 #define DUN_SPIRAL 4 // Spiral of rooms, ascending, 4 per floor
 
+#define DUN_THEME_CATPAW 0 // Catpaw theme
+#define DUN_THEME_BRICK 1 // Brick building theme
+#define DUN_THEME_SHIP 2 // Ship theme
+#define DUN_THEME_WAREHOUSE 3 // Warehouse theme
+#define DUN_THEME_HOSPITAL 4 // Hospital theme
+#define DUN_THEME_HOUSE 5 // House theme
+#define DUN_THEME_TOWER 6 // The final tower theme
+
 #define DUN_END_DOOR 0 // Dungeon ends in an exit door 
 #define DUN_END_BOSS 1 // Dungeon ends in a boss
+#define DUN_END_CHEST 2 // Dungeon has a guaranteed treasure chest at the end
 
 byte cache_originx = 0;
 byte cache_originy = 0;
 
 #define MAPSIZE 16
+
+struct dungeon{
+  uint8_t x;
+  uint8_t y;
+  uint8_t type;
+  uint8_t theme;
+  uint8_t size;
+  uint8_t exit;
+};
+
+const struct dungeon dungeons[] PROGMEM = {
+  {10,24,DUN_STACK,DUN_THEME_CATPAW,2,DUN_END_BOSS},
+  {40,56,DUN_STACK,DUN_THEME_BRICK,3,DUN_END_CHEST},
+  {40,48,DUN_ZIGZAG,DUN_THEME_BRICK,6,DUN_END_CHEST},
+  {57,51,DUN_ZIGZAG,DUN_THEME_SHIP,2,DUN_END_CHEST},
+  {56,42,DUN_SPLIT,DUN_THEME_SHIP,4,DUN_END_BOSS}
+};
 
 void mapinit(char map[][MAPSIZE], int width, int height);
 void mapgen(char map[][MAPSIZE], int mapwidth, int mapheight, int startx, int starty, int endx, int endy);
@@ -334,7 +362,7 @@ uint8_t check_proximity(char map[][MAPSIZE], uint8_t i, uint8_t j, uint8_t extra
   return 1;
 }
 
-#define DECORATION_CHANCE 25
+#define DECORATION_CHANCE 20
 void mapdetail(char map[][MAPSIZE], int width, int height){
   uint8_t i,j,k,m;
   //Avoid checking the boundary tiles
@@ -359,5 +387,11 @@ void mapdetail(char map[][MAPSIZE], int width, int height){
       }
     }
   }
+  //TODO: Add code that puts doors in random positions on fixed sides,
+  //based on which level of the dungeon we are on, making sure they do
+  //not have a wall blocking them.
 }
-
+//ALSO TODO: add drawing of exit doors (and chests) as a separate thing
+//since it's common to all dungeons
+//ALSO ALSO TODO: Add code to spawn the player at the correct door based
+//on the room they last came from (or if they just entered the dungeon).
