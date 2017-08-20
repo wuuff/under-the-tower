@@ -1,3 +1,4 @@
+#include "dungeon.h"
 #include "overworld.h"
 
 const byte dude[] PROGMEM = {8,8,
@@ -816,12 +817,20 @@ void step_world(){
       collision = pgm_read_byte(&world[((dudey-1)/8)*64+dudex/8]);
       //Depending on which, we set dungeon position to tile x/y of door.
       //This signals to the dungeon generator which dungeon we want to enter.
+      uint8_t dungeonx,dungeony;
       if( collision == DOOR ){
         dungeonx = dudex/8;
         dungeony = (dudey-1/8);
       }else{
         dungeonx = dudex+7/8;
         dungeony = (dudey-1/8);
+      }
+      // Identify the dungeon we are entering
+      for( uint8_t i = 0; i < NUM_DUNGEONS; i++ ){
+        if( pgm_read_byte(&(dungeons[i].x)) == dungeonx && pgm_read_byte(&(dungeons[i].y)) == dungeony ){
+          dungeonid = i;
+          break;
+        }
       }
       mode = DUNGEON;
       dungeon_generated = 0;

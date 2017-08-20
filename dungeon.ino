@@ -1,6 +1,7 @@
 #include "overworld.h"
+#include "dungeon.h"
 char dungeon_map[16][16];
-uint8_t dungeonx,dungeony;//Used to identify dungeon
+uint8_t dungeonid = 0;//Used to identify dungeon
 uint8_t dungeon_generated = 0;
 uint8_t dungeon_level = 0;
 
@@ -22,19 +23,48 @@ uint8_t dungeon_level = 0;
 #define DUN_END_BOSS 1 // Dungeon ends in a boss
 #define DUN_END_CHEST 2 // Dungeon has a guaranteed treasure chest at the end
 
-byte cache_originx = 0;
-byte cache_originy = 0;
+#define DUN_TILE_SIDE 2
+#define DUN_TILE_DETAIL1 3
+#define DUN_TILE_DETAIL2 4
+#define DUN_TILE_DETAIL3 5
+#define DUN_TILE_DOOR 6
+#define DUN_TILE_STAIRSUP 7
+#define DUN_TILE_STAIRSDN 8
+
+const byte common_tiles[] PROGMEM = {
+//Door
+8,8,
+B11111111,
+B10000001,
+B10000001,
+B10000001,
+B11000001,
+B10000001,
+B10000001,
+B10000001,
+//Stairs up
+8,8,
+B11110000,
+B10011100,
+B10010111,
+B10010101,
+B10010101,
+B11110101,
+B10011101,
+B10000111,
+//Stairs down
+8,8,
+B11111111,
+B11111111,
+B10111111,
+B10101111,
+B10101011,
+B10101011,
+B10101011,
+B11111111,
+};
 
 #define MAPSIZE 16
-
-struct dungeon{
-  uint8_t x;
-  uint8_t y;
-  uint8_t type;
-  uint8_t theme;
-  uint8_t size;
-  uint8_t exit;
-};
 
 const struct dungeon dungeons[] PROGMEM = {
   {10,24,DUN_STACK,DUN_THEME_CATPAW,2,DUN_END_BOSS},
@@ -97,10 +127,18 @@ B01000010,
 };
 
 void draw_dungeon(){
+  gb.display.cursorX = 0;
+  gb.display.cursorY = 0;
+  gb.display.print(dungeon_map[1][1]-1+((pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES)*10));
   for(byte i = 0; i < 16; i++){
     for(byte j = 0; j < 16; j++){
       if( dungeon_map[i][j] != 0 ){
-        gb.display.drawBitmap((cache_originx-dudex)+(j*8)+(SCREEN_WIDTH/2-4),(cache_originy-dudey)+(i*8)+(SCREEN_HEIGHT/2-4),&dungeon_tiles[(dungeon_map[i][j]-1)*10]);
+        if( dungeon_map[i][j] <= NUM_DUN_TILES ){
+          gb.display.drawBitmap((-dudex)+(j*8)+(SCREEN_WIDTH/2-4),(-dudey)+(i*8)+(SCREEN_HEIGHT/2-4),&dungeon_tiles[(dungeon_map[i][j]-1+(pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES))*10]);
+        }else{
+          //If this is a common tile, then draw that specific tile
+          gb.display.drawBitmap((-dudex)+(j*8)+(SCREEN_WIDTH/2-4),(-dudey)+(i*8)+(SCREEN_HEIGHT/2-4),&common_tiles[(dungeon_map[i][j]-1-NUM_DUN_TILES)*10]);
+        }
       }
     }
   }
@@ -116,18 +154,18 @@ byte test_collision(byte dir){
 
   
   if( dir == UP ){
-    gb.display.println(dungeon_map[(cache_originy+dudey-1)/8][(cache_originx+dudex)/8]);
-    return dungeon_map[(cache_originy+dudey-1)/8][(cache_originx+dudex)/8] != 0 ||
-      dungeon_map[(cache_originy+dudey-1)/8][(cache_originx+dudex+7)/8] != 0;
+    gb.display.println(dungeon_map[(dudey-1)/8][(dudex)/8]);
+    return dungeon_map[(dudey-1)/8][(dudex)/8] != 0 ||
+      dungeon_map[(dudey-1)/8][(dudex+7)/8] != 0;
   }else if( dir == DOWN ){
-    return dungeon_map[(cache_originy+dudey+8)/8][(cache_originx+dudex)/8] != 0 ||
-      dungeon_map[(cache_originy+dudey+8)/8][(cache_originx+dudex+7)/8] != 0;
+    return dungeon_map[(dudey+8)/8][(dudex)/8] != 0 ||
+      dungeon_map[(dudey+8)/8][(dudex+7)/8] != 0;
   }else if( dir == LEFT ){
-    return dungeon_map[(cache_originy+dudey)/8][(cache_originx+dudex-1)/8] != 0 ||
-      dungeon_map[(cache_originy+dudey+7)/8][(cache_originx+dudex-1)/8] != 0;
+    return dungeon_map[(dudey)/8][(dudex-1)/8] != 0 ||
+      dungeon_map[(dudey+7)/8][(dudex-1)/8] != 0;
   }else{
-    return dungeon_map[(cache_originy+dudey)/8][(cache_originx+dudex+8)/8] != 0 ||
-      dungeon_map[(cache_originy+dudey+7)/8][(cache_originx+dudex+8)/8] != 0;
+    return dungeon_map[(dudey)/8][(dudex+8)/8] != 0 ||
+      dungeon_map[(dudey+7)/8][(dudex+8)/8] != 0;
   }
 }
 
@@ -137,6 +175,7 @@ void step_dungeon(){
      mapinit(dungeon_map,16,16);
      mapgen(dungeon_map,16,16,0,0,16,16);
      mapdetail(dungeon_map,16,16);
+     mapexits(dungeon_map,16,16);
      dudex = 16;
      dudey = 16;
      dungeon_generated = 1;
@@ -387,9 +426,51 @@ void mapdetail(char map[][MAPSIZE], int width, int height){
       }
     }
   }
-  //TODO: Add code that puts doors in random positions on fixed sides,
-  //based on which level of the dungeon we are on, making sure they do
-  //not have a wall blocking them.
+}
+
+void mapexits(char map[][MAPSIZE], int width, int height){
+  uint8_t i,j;
+  switch( pgm_read_byte(&(dungeons[dungeonid].type)) ){
+    case DUN_STACK:
+      //If on ground floor, generate entrance door
+      if( dungeon_level == 0 ){
+        while(1){//Generate until we get a valid placement
+          i = height-1;
+          j = 1+(rand()%(width-1));
+          //If the space above is clear, place a door
+          if( map[i-1][j] == 0 ){
+            map[i][j] = DUN_TILE_DOOR;
+            break;
+          }
+        }
+      }else{ //If not on ground level, generate stairs down
+        while(1){//Generate until we get a valid placement
+          i = 1+(rand()%(height-1));
+          j = 1+(rand()%(width-1));
+          //If the space for the stairs is clear, place stairs down
+          if( map[i][j] == 0 ){
+            map[i][j] = DUN_TILE_STAIRSDN;
+            break;
+          }
+        }
+      }
+      //If not at the top of the stack of rooms, generate stairs up
+      if( dungeon_level < pgm_read_byte(&(dungeons[dungeonid].size))-1 ){
+        while(1){//Generate until we get a valid placement
+          i = 1+(rand()%(height-1));
+          j = 1+(rand()%(width-1));
+          //If the space for the stairs is clear, place stairs up
+          if( map[i][j] == 0 ){
+            map[i][j] = DUN_TILE_STAIRSUP;
+            break;
+          }
+        }
+      }
+      break;
+    //TODO: Add code that puts doors in random positions on fixed sides,
+    //based on which level of the dungeon we are on, making sure they do
+    //not have a wall blocking them. Do this for all other types.
+  }
 }
 //ALSO TODO: add drawing of exit doors (and chests) as a separate thing
 //since it's common to all dungeons
