@@ -1,51 +1,14 @@
 #include "dungeon.h"
 #include "overworld.h"
 
-const byte dude[] PROGMEM = {8,8,
-B00011000,
-B01100110,
-B10000001,
-B10100101,
-B01000010,
-B00111100,
-B11011011,
-B00100100,
-};
+//up,down,left,right
+//1,none,2
 
-const byte dudedn1[] PROGMEM = {8,8,
-B00011000,
-B01100110,
-B10000001,
-B10100101,
-B01000010,
-B10111100,
-B01011010,
-B00100001,
-};
+uint8_t player_moving = 0;
 
-const byte dudedn2[] PROGMEM = {8,8,
-B00011000,
-B01100110,
-B10000001,
-B10100101,
-B01000010,
-B00111101,
-B01011010,
-B10000100,
-};
-
-const byte dudeup[] PROGMEM = {8,8,
-B00011000,
-B01100110,
-B10000001,
-B10000001,
-B01000010,
-B00111100,
-B11011011,
-B00100100,
-};
-
-const byte dudeup1[] PROGMEM = {8,8,
+const uint8_t player_sprites[] PROGMEM = {
+// Up
+8,8,
 B00011000,
 B01100110,
 B10000001,
@@ -54,9 +17,16 @@ B01000010,
 B10111100,
 B01011010,
 B00100001,
-};
-
-const byte dudeup2[] PROGMEM = {8,8,
+8,8,
+B00011000,
+B01100110,
+B10000001,
+B10000001,
+B01000010,
+B00111100,
+B11011011,
+B00100100,
+8,8,
 B00011000,
 B01100110,
 B10000001,
@@ -65,20 +35,64 @@ B01000010,
 B00111101,
 B01011010,
 B10000100,
-};
-
-const byte dudert[] PROGMEM = {8,8,
+// Down
+8,8,
 B00011000,
 B01100110,
 B10000001,
-B10000101,
+B10100101,
+B01000010,
+B10111100,
+B01011010,
+B00100001,
+8,8,
+B00011000,
+B01100110,
+B10000001,
+B10100101,
+B01000010,
+B00111100,
+B11011011,
+B00100100,
+8,8,
+B00011000,
+B01100110,
+B10000001,
+B10100101,
+B01000010,
+B00111101,
+B01011010,
+B10000100,
+// Left
+8,8,
+B00011000,
+B01100110,
+B10000001,
+B10100001,
+B01000010,
+B00111100,
+B01011010,
+B00010100,
+8,8,
+B00011000,
+B01100110,
+B10000001,
+B10100001,
 B01000010,
 B00111100,
 B01011010,
 B00100100,
-};
-
-const byte dudert1[] PROGMEM = {8,8,
+8,8,
+B00011000,
+B01100110,
+B10000001,
+B10100001,
+B01000010,
+B00111100,
+B01011010,
+B00101000,
+// Right
+8,8,
 B00011000,
 B01100110,
 B10000001,
@@ -87,9 +101,16 @@ B01000010,
 B00111100,
 B01011010,
 B00101000,
-};
-
-const byte dudert2[] PROGMEM = {8,8,
+8,8,
+B00011000,
+B01100110,
+B10000001,
+B10000101,
+B01000010,
+B00111100,
+B01011010,
+B00100100,
+8,8,
 B00011000,
 B01100110,
 B10000001,
@@ -607,72 +628,6 @@ B00000100,
 B00000000,
 };
 
-const byte water1[] PROGMEM = {8,8,
-B00000000,
-B00100000,
-B01011100,
-B00000000,
-B00000000,
-B00000100,
-B00011010,
-B00000000,
-};
-
-const byte water2[] PROGMEM = {8,8,
-B00000000,
-B00000001,
-B11100010,
-B00000000,
-B00000000,
-B10000000,
-B01000011,
-B00000000,
-};
-
-const byte drain1[] PROGMEM = {8,8,
-B00111100,
-B01111110,
-B11111111,
-B11111111,
-B11111111,
-B10000101,
-B01010110,
-B01010010,
-};
-
-const byte drain2[] PROGMEM = {8,8,
-B00111100,
-B01111110,
-B11111111,
-B11111111,
-B11111111,
-B10010001,
-B01010110,
-B01000110,
-};
-
-const byte flow1[] PROGMEM = {8,8,
-B01010010,
-B01000010,
-B01000010,
-B01001010,
-B01001010,
-B01001010,
-B01000010,
-B01010010,
-};
-
-const byte flow2[] PROGMEM = {8,8,
-B01000110,
-B01010010,
-B01010010,
-B01010010,
-B01000010,
-B01001010,
-B01001010,
-B01001010,
-};
-
 const byte world[] PROGMEM = {
 15,15,15,15,15,2,15,15,15,15,15,2,15,15,15,15,15,2,1,1,1,38,38,38,38,27,27,27,27,27,27,27,27,37,37,37,37,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,17,17,17,17,17,
 1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,38,38,38,38,27,11,27,27,27,27,11,27,37,37,37,37,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,17,17,17,17,17,
@@ -778,8 +733,12 @@ void draw_world(){
       } 
     }
   }
-  worldframe+=1;
-  worldframe%=8;
+  //Draw player.  If moving and frames dictate it so, play walking animation
+  if( player_moving && (dudeframe/2 == 0 || dudeframe/2 == 2) ){
+    gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,player_sprites+((dudeframe/2)+dudeanimation*3)*10);
+  }else{
+    gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,player_sprites+(1+dudeanimation*3)*10);
+  }
 }
 
 uint8_t test_world_collision(uint8_t dir){
@@ -803,11 +762,13 @@ uint8_t test_world_collision(uint8_t dir){
 }
 
 void step_world(){
-  byte moved = 0;
-  
-  dudeframe%=7;
+  player_moving = 0;
   
   dudeframe++;
+  dudeframe%=7;
+
+  worldframe++;
+  worldframe%=8;
   
   if( gb.buttons.repeat(BTN_UP,1) ){
     uint8_t collision = 0;
@@ -835,81 +796,33 @@ void step_world(){
       mode = DUNGEON;
       dungeon_generated = 0;
       dungeon_level = 0;
+      previous_level = -1;
       return;
     }
     if( !collision ){
-      //Overwrite standing sprite
-      if(dudeframe/2 == 0){
-        gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup1);
-      }else if(dudeframe/2 == 2){
-        gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup2);
-      }else{
-        gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup);
-      }
-      
       dudey--;
       dudeanimation = UP;
-      moved = 1;
+      player_moving = 1;
       //try_combat();  TODO: Restore combat
     }
   }
   else if(gb.buttons.repeat(BTN_DOWN,1) && !test_world_collision(DOWN)){
-    //Overwrite standing sprite
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudedn1);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudedn2);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dude);
-    }
-    
     dudey++;
     dudeanimation = DOWN;
-    moved = 1;
+    player_moving = 1;
     //try_combat();  TODO: Restore combat
   }
   if(gb.buttons.repeat(BTN_LEFT,1) && !test_world_collision(LEFT)){
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert1,NOROT,FLIPH);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert2,NOROT,FLIPH);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert,NOROT,FLIPH);
-    }
-    
     dudex--;
     dudeanimation = LEFT;
-    moved = 1;
+    player_moving = 1;
     //try_combat();  TODO: Restore combat
   }
   else if(gb.buttons.repeat(BTN_RIGHT,1) && !test_world_collision(RIGHT)){
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert1);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert2);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert);
-    }
-    
     dudex++;
     dudeanimation = RIGHT;
-    moved = 1;
+    player_moving = 1;
     //try_combat();  TODO: Restore combat
-  }
-
-  if( !moved ){
-    if( dudeanimation == UP ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup);
-    }
-    else if( dudeanimation == DOWN ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dude);
-    }
-    else if( dudeanimation == LEFT ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert,NOROT,FLIPH);
-    }
-    else if( dudeanimation == RIGHT ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert);
-    }
   }
 }
 

@@ -4,6 +4,7 @@ char dungeon_map[16][16];
 uint8_t dungeonid = 0;//Used to identify dungeon
 uint8_t dungeon_generated = 0;
 uint8_t dungeon_level = 0;
+int8_t previous_level = -1; //-1 means that the player entered the dungeon
 
 #define DUN_STACK 0 // A stack of rooms
 #define DUN_ZIGZAG 1 // Zig-zagging rooms, ascending, starting to the left
@@ -134,38 +135,72 @@ void draw_dungeon(){
     for(byte j = 0; j < 16; j++){
       if( dungeon_map[i][j] != 0 ){
         if( dungeon_map[i][j] <= NUM_DUN_TILES ){
-          gb.display.drawBitmap((-dudex)+(j*8)+(SCREEN_WIDTH/2-4),(-dudey)+(i*8)+(SCREEN_HEIGHT/2-4),&dungeon_tiles[(dungeon_map[i][j]-1+(pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES))*10]);
+          gb.display.drawBitmap((j*8 - dudex)+(SCREEN_WIDTH/2-4),(i*8 - dudey)+(SCREEN_HEIGHT/2-4),&dungeon_tiles[(dungeon_map[i][j]-1+(pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES))*10]);
         }else{
           //If this is a common tile, then draw that specific tile
-          gb.display.drawBitmap((-dudex)+(j*8)+(SCREEN_WIDTH/2-4),(-dudey)+(i*8)+(SCREEN_HEIGHT/2-4),&common_tiles[(dungeon_map[i][j]-1-NUM_DUN_TILES)*10]);
+          gb.display.drawBitmap((j*8 - dudex)+(SCREEN_WIDTH/2-4),(i*8 - dudey)+(SCREEN_HEIGHT/2-4),&common_tiles[(dungeon_map[i][j]-1-NUM_DUN_TILES)*10]);
         }
       }
     }
   }
-  worldframe+=1;
-  worldframe%=4;
+  //Draw player.  If moving and frames dictate it so, play walking animation
+  if( player_moving && (dudeframe/2 == 0 || dudeframe/2 == 2) ){
+    gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,player_sprites+((dudeframe/2)+dudeanimation*3)*10);
+  }else{
+    gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,player_sprites+(1+dudeanimation*3)*10);
+  }
 }
 
 byte test_collision(byte dir){
-  return 0;
+  uint8_t tile = 0;
 
-
-
-
-  
+  //Prioritize exit tiles over other tiles
   if( dir == UP ){
-    gb.display.println(dungeon_map[(dudey-1)/8][(dudex)/8]);
-    return dungeon_map[(dudey-1)/8][(dudex)/8] != 0 ||
-      dungeon_map[(dudey-1)/8][(dudex+7)/8] != 0;
+    tile = dungeon_map[(dudey-1)/8][(dudex)/8];
+    if( tile != DUN_TILE_DOOR && tile != DUN_TILE_STAIRSUP && tile != DUN_TILE_STAIRSDN && dungeon_map[(dudey-1)/8][(dudex+7)/8] ){
+      return dungeon_map[(dudey-1)/8][(dudex+7)/8];
+    }else{
+      return tile;
+    }
   }else if( dir == DOWN ){
-    return dungeon_map[(dudey+8)/8][(dudex)/8] != 0 ||
-      dungeon_map[(dudey+8)/8][(dudex+7)/8] != 0;
+    tile = dungeon_map[(dudey+8)/8][(dudex)/8];
+    if( tile != DUN_TILE_DOOR && tile != DUN_TILE_STAIRSUP && tile != DUN_TILE_STAIRSDN && dungeon_map[(dudey+8)/8][(dudex+7)/8] ){
+      return dungeon_map[(dudey+8)/8][(dudex+7)/8];
+    }else{
+      return tile;
+    }
   }else if( dir == LEFT ){
-    return dungeon_map[(dudey)/8][(dudex-1)/8] != 0 ||
-      dungeon_map[(dudey+7)/8][(dudex-1)/8] != 0;
+    tile = dungeon_map[(dudey)/8][(dudex-1)/8];
+    if( tile != DUN_TILE_DOOR && tile != DUN_TILE_STAIRSUP && tile != DUN_TILE_STAIRSDN && dungeon_map[(dudey+7)/8][(dudex-1)/8] ){
+      return dungeon_map[(dudey+7)/8][(dudex-1)/8];
+    }else{
+      return tile;
+    }
   }else{
-    return dungeon_map[(dudey)/8][(dudex+8)/8] != 0 ||
-      dungeon_map[(dudey+7)/8][(dudex+8)/8] != 0;
+    tile = dungeon_map[(dudey)/8][(dudex+8)/8];
+    if( tile != DUN_TILE_DOOR && tile != DUN_TILE_STAIRSUP && tile != DUN_TILE_STAIRSDN && dungeon_map[(dudey+7)/8][(dudex+8)/8] ){
+      return dungeon_map[(dudey+7)/8][(dudex+8)/8];
+    }else{
+      return tile;
+    }
+  }
+}
+
+void test_collide_exit(uint8_t collision){
+  switch( collision ){
+    case DUN_TILE_DOOR: 
+      //TODO: This requires more complex logic, depending on dungeon layout
+      return;
+    case DUN_TILE_STAIRSUP:
+      previous_level = dungeon_level;
+      dungeon_level++;
+      dungeon_generated = 0;
+      return;
+    case DUN_TILE_STAIRSDN:
+      previous_level = dungeon_level;
+      dungeon_level--;
+      dungeon_generated = 0;
+      return;
   }
 }
 
@@ -175,104 +210,89 @@ void step_dungeon(){
      mapinit(dungeon_map,16,16);
      mapgen(dungeon_map,16,16,0,0,16,16);
      mapdetail(dungeon_map,16,16);
-     mapexits(dungeon_map,16,16);
+     //Default spawn position if spawning fails
      dudex = 16;
      dudey = 16;
+     //Generate exits and spawn player
+     mapexits(dungeon_map,16,16);
      dungeon_generated = 1;
   }
   
-  byte moved = 0;
+  player_moving = 0;
   
-  dudeframe%=7;
   
-  dudeframe++;
-  
-  if( gb.buttons.repeat(BTN_UP,1) && !test_collision(UP) ){
-    //Overwrite standing sprite
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup1);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup2);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup);
-    }
-    
-    dudey--;
-    dudeanimation = UP;
-    moved = 1;
-    //try_combat();  TODO: Restore combat
-  }
-  else if(gb.buttons.repeat(BTN_DOWN,1) && !test_collision(DOWN)){
-    //Overwrite standing sprite
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudedn1);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudedn2);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dude);
-    }
-    
-    dudey++;
-    dudeanimation = DOWN;
-    moved = 1;
-    //try_combat();  TODO: Restore combat
-  }
-  if(gb.buttons.repeat(BTN_LEFT,1) && !test_collision(LEFT)){
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert1,NOROT,FLIPH);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert2,NOROT,FLIPH);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert,NOROT,FLIPH);
-    }
-    
-    dudex--;
-    dudeanimation = LEFT;
-    moved = 1;
-    //try_combat();  TODO: Restore combat
-  }
-  else if(gb.buttons.repeat(BTN_RIGHT,1) && !test_collision(RIGHT)){
-    if(dudeframe/2 == 0){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert1);
-    }else if(dudeframe/2 == 2){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert2);
-    }else{
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert);
-    }
-    
-    dudex++;
-    dudeanimation = RIGHT;
-    moved = 1;
-    //try_combat();  TODO: Restore combat
-  }
+  uint8_t collision = 0;
 
-  if( !moved ){
-    if( dudeanimation == UP ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudeup);
+    
+  dudeframe++;
+  dudeframe%=7;
+
+  worldframe+=1;
+  worldframe%=4;
+  
+  if( gb.buttons.repeat(BTN_UP,1) ){
+    collision = test_collision(UP);
+    if( collision ){
+      test_collide_exit(collision);
+    }else{
+      dudey--;
+      dudeanimation = UP;
+      player_moving = 1;
+      //try_combat();  TODO: Restore combat
     }
-    else if( dudeanimation == DOWN ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dude);
+  }
+  else if( gb.buttons.repeat(BTN_DOWN,1) ){
+    collision = test_collision(DOWN);
+    if( collision ){
+      test_collide_exit(collision);
+    }else{
+      dudey++;
+      dudeanimation = DOWN;
+      player_moving = 1;
+      //try_combat();  TODO: Restore combat
     }
-    else if( dudeanimation == LEFT ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert,NOROT,FLIPH);
+  }
+  if( gb.buttons.repeat(BTN_LEFT,1) ){
+    collision = test_collision(LEFT);
+    if( collision ){
+      test_collide_exit(collision);
+    }else{
+      dudex--;
+      dudeanimation = LEFT;
+      player_moving = 1;
+      //try_combat();  TODO: Restore combat
     }
-    else if( dudeanimation == RIGHT ){
-      gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,dudert);
+  }
+  else if( gb.buttons.repeat(BTN_RIGHT,1) ){
+    collision = test_collision(RIGHT);
+    if( collision ){
+      test_collide_exit(collision);
+    }else{
+      dudex++;
+      dudeanimation = RIGHT;
+      player_moving = 1;
+      //try_combat();  TODO: Restore combat
     }
   }
 }
 
 void mapinit(char map[][MAPSIZE], int width, int height){
     int i,j;
-    
+
+    //Clear all tiles
+    for( i = 0; i < width; i++ ){
+      for( j = 0; j < height; j++ ){
+        map[j][i] = 0;
+      }
+    }
     //Generate walls around the edges
     for( i = 0; i < width; i++ ){
-        map[0][i] = 1;
-        map[height-1][i] = 1;
+      map[0][i] = 1;
+      map[height-1][i] = 1;
     }
     for( j = 0; j < height; j++ ){
-        map[j][0] = 1;
-        map[j][width-1] = 1;
+      map[j][0] = 1;
+      map[j][width-1] = 1;
     }
 }
 
@@ -442,6 +462,11 @@ void mapexits(char map[][MAPSIZE], int width, int height){
             map[i][j] = DUN_TILE_DOOR;
             break;
           }
+          //If the previous room is outside, spawn player here
+          if( previous_level == -1 ){
+            dudex = j*8;
+            dudey = (i-1)*8;
+          }
         }
       }else{ //If not on ground level, generate stairs down
         while(1){//Generate until we get a valid placement
@@ -451,6 +476,22 @@ void mapexits(char map[][MAPSIZE], int width, int height){
           if( map[i][j] == 0 ){
             map[i][j] = DUN_TILE_STAIRSDN;
             break;
+          }
+          //If the previous room is above this one, spawn player here
+          if( previous_level > dungeon_level ){
+            if( map[i][j+1] == 0 ){
+              dudex = i;
+              dudey = j+1;
+            }else if( map[i+1][j] == 0 ){
+              dudex = i+1;
+              dudey = j;
+            }else if( map[i][j-1] == 0 ){
+              dudex = i;
+              dudey = j-1;
+            }else if( map[i-1][j] == 0 ){
+              dudex = i-1;
+              dudey = j;
+            }
           }
         }
       }
@@ -463,6 +504,22 @@ void mapexits(char map[][MAPSIZE], int width, int height){
           if( map[i][j] == 0 ){
             map[i][j] = DUN_TILE_STAIRSUP;
             break;
+          }
+          //If the previous room is below this one, spawn player here
+          if( previous_level >= 0 && previous_level > dungeon_level ){
+            if( map[i][j+1] == 0 ){
+              dudex = i;
+              dudey = j+1;
+            }else if( map[i+1][j] == 0 ){
+              dudex = i+1;
+              dudey = j;
+            }else if( map[i][j-1] == 0 ){
+              dudex = i;
+              dudey = j-1;
+            }else if( map[i-1][j] == 0 ){
+              dudex = i-1;
+              dudey = j;
+            }
           }
         }
       }

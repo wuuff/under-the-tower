@@ -14,18 +14,20 @@
 #define DOCK2 23
 #define DOCK3 43
 
-#define UP 1
-#define DOWN 2
-#define LEFT 3
-#define RIGHT 4
+#define UP 0
+#define DOWN 1
+#define LEFT 2
+#define RIGHT 3
 
+extern uint8_t player_moving;
+extern const uint8_t player_sprites[];
 extern byte dudeanimation;
 extern byte dudeframe;
 extern byte worldframe;
 extern uint16_t dudex;
 extern uint16_t dudey;
 
-extern const byte dude[];
+/*extern const byte dude[];
 extern const byte dudedn1[];
 extern const byte dudedn2[];
 extern const byte dudeup[];
@@ -33,4 +35,4 @@ extern const byte dudeup1[];
 extern const byte dudeup2[];
 extern const byte dudert[];
 extern const byte dudert1[];
-extern const byte dudert2[];
+extern const byte dudert2[];*/
