@@ -128,9 +128,6 @@ B01000010,
 };
 
 void draw_dungeon(){
-  gb.display.cursorX = 0;
-  gb.display.cursorY = 0;
-  gb.display.print(dungeon_map[1][1]-1+((pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES)*10));
   for(byte i = 0; i < 16; i++){
     for(byte j = 0; j < 16; j++){
       if( dungeon_map[i][j] != 0 ){
@@ -149,6 +146,11 @@ void draw_dungeon(){
   }else{
     gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,player_sprites+(1+dudeanimation*3)*10);
   }
+  gb.display.cursorX = 0;
+  gb.display.cursorY = 0;
+  //gb.display.print(dungeon_map[1][1]-1+((pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES)*10));
+  gb.display.println(dudex);
+  gb.display.println(dudey);
 }
 
 byte test_collision(byte dir){
@@ -189,7 +191,16 @@ byte test_collision(byte dir){
 void test_collide_exit(uint8_t collision){
   switch( collision ){
     case DUN_TILE_DOOR: 
-      //TODO: This requires more complex logic, depending on dungeon layout
+      switch( pgm_read_byte(&(dungeons[dungeonid].type)) ){
+        case DUN_STACK:
+          //In a stack layout, the only door is the exit to the dungeon,
+          //so this one is simple: exit the dungeon and place the player outside
+          mode = WORLD;
+          dudex = pgm_read_byte(&(dungeons[dungeonid].x))*8;
+          dudey = (pgm_read_byte(&(dungeons[dungeonid].y))+1)*8;
+        break;
+        //TODO: This requires more complex logic, depending on dungeon layout
+      }
       return;
     case DUN_TILE_STAIRSUP:
       previous_level = dungeon_level;
@@ -392,12 +403,12 @@ void mapgen(char map[][MAPSIZE], int mapwidth, int mapheight, int startx, int st
         }
         //Generate a door at a random position
         //(allocating space for it to be 2 high)
-        door = starty + 1 + (rand()%(height-2));
+        door = starty + 1 + (rand()%(height-3));//I don't quite follow why this would need to be 3, but it seems to prevent a too-small doorway.  TODO: investigate
         //Generate an extra door if wall is long enough.
         //Doors may overlap or be next to each other because such
         //doors shouldn't be a problem and it might result in interesting maps.
         //If it is not long enough set to -1 so it won't interfere
-        door2 = height >= EXTRA_DOOR ? starty + 1 + (rand()%(height-2)) : -1;
+        door2 = height >= EXTRA_DOOR ? starty + 1 + (rand()%(height-3)) : -1;
         //printf("VERT %d\n",position);
         for( i = starty; i < starty + height; i++ ){
             if( i != door && i != door+1 && i != door2 && i != door2+1 )
@@ -432,7 +443,7 @@ void mapdetail(char map[][MAPSIZE], int width, int height){
         map[i][j] = 2;
       }
       //Check if we want to put something decorative
-      if( i > 1 && map[i][j] != 1 && DECORATION_CHANCE > (rand()%100) ){
+      if( i > 1 && map[i][j] == 0 && DECORATION_CHANCE > (rand()%100) ){
         if( 50 > (rand()%100) ){
           if( check_proximity( map, i, j, 0 ) ){
             map[i][j] = 5;
@@ -460,12 +471,12 @@ void mapexits(char map[][MAPSIZE], int width, int height){
           //If the space above is clear, place a door
           if( map[i-1][j] == 0 ){
             map[i][j] = DUN_TILE_DOOR;
+            //If the previous room is outside, spawn player here
+            if( previous_level == -1 ){
+              dudex = j*8;
+              dudey = (i-1)*8;
+            }
             break;
-          }
-          //If the previous room is outside, spawn player here
-          if( previous_level == -1 ){
-            dudex = j*8;
-            dudey = (i-1)*8;
           }
         }
       }else{ //If not on ground level, generate stairs down
@@ -475,24 +486,25 @@ void mapexits(char map[][MAPSIZE], int width, int height){
           //If the space for the stairs is clear, place stairs down
           if( map[i][j] == 0 ){
             map[i][j] = DUN_TILE_STAIRSDN;
+            //If the previous room is below this one, spawn player here
+            if( previous_level >= 0 && previous_level < dungeon_level ){
+              if( map[i][j+1] == 0 ){
+                dudex = (j+1)*8;
+                dudey = i*8;
+              }else if( map[i+1][j] == 0 ){
+                dudex = j*8;
+                dudey = (i+1)*8;
+              }else if( map[i][j-1] == 0 ){
+                dudex = (j-1)*8;
+                dudey = i*8;
+              }else if( map[i-1][j] == 0 ){
+                dudex = j*8;
+                dudey = (i-1)*8;
+              }
+            }
             break;
           }
-          //If the previous room is above this one, spawn player here
-          if( previous_level > dungeon_level ){
-            if( map[i][j+1] == 0 ){
-              dudex = i;
-              dudey = j+1;
-            }else if( map[i+1][j] == 0 ){
-              dudex = i+1;
-              dudey = j;
-            }else if( map[i][j-1] == 0 ){
-              dudex = i;
-              dudey = j-1;
-            }else if( map[i-1][j] == 0 ){
-              dudex = i-1;
-              dudey = j;
-            }
-          }
+          
         }
       }
       //If not at the top of the stack of rooms, generate stairs up
@@ -503,23 +515,23 @@ void mapexits(char map[][MAPSIZE], int width, int height){
           //If the space for the stairs is clear, place stairs up
           if( map[i][j] == 0 ){
             map[i][j] = DUN_TILE_STAIRSUP;
-            break;
-          }
-          //If the previous room is below this one, spawn player here
-          if( previous_level >= 0 && previous_level > dungeon_level ){
-            if( map[i][j+1] == 0 ){
-              dudex = i;
-              dudey = j+1;
-            }else if( map[i+1][j] == 0 ){
-              dudex = i+1;
-              dudey = j;
-            }else if( map[i][j-1] == 0 ){
-              dudex = i;
-              dudey = j-1;
-            }else if( map[i-1][j] == 0 ){
-              dudex = i-1;
-              dudey = j;
+            //If the previous room is above this one, spawn player here
+            if( previous_level > dungeon_level ){
+              if( map[i][j+1] == 0 ){
+                dudex = (j+1)*8;
+                dudey = i*8;
+              }else if( map[i+1][j] == 0 ){
+                dudex = j*8;
+                dudey = (i+1)*8;
+              }else if( map[i][j-1] == 0 ){
+                dudex = (j-1)*8;
+                dudey = i*8;
+              }else if( map[i-1][j] == 0 ){
+                dudex = j*8;
+                dudey = (i-1)*8;
+              }
             }
+            break;
           }
         }
       }
