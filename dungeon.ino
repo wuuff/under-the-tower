@@ -195,7 +195,9 @@ void test_collide_exit(uint8_t collision){
         case DUN_STACK:
           //In a stack layout, the only door is the exit to the dungeon,
           //so this one is simple: exit the dungeon and place the player outside
-          mode = WORLD;
+          mode = TO_WORLD;
+          transition = -SCREEN_HEIGHT/2;
+          gb.display.persistence = true;
           dudex = pgm_read_byte(&(dungeons[dungeonid].x))*8;
           dudey = (pgm_read_byte(&(dungeons[dungeonid].y))+1)*8;
         break;
@@ -206,11 +208,17 @@ void test_collide_exit(uint8_t collision){
       previous_level = dungeon_level;
       dungeon_level++;
       dungeon_generated = 0;
+      mode = TO_DUNGEON;
+      transition = -SCREEN_HEIGHT/2;
+      gb.display.persistence = true;
       return;
     case DUN_TILE_STAIRSDN:
       previous_level = dungeon_level;
       dungeon_level--;
       dungeon_generated = 0;
+      mode = TO_DUNGEON;
+      transition = -SCREEN_HEIGHT/2;
+      gb.display.persistence = true;
       return;
   }
 }

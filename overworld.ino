@@ -1,6 +1,8 @@
 #include "dungeon.h"
 #include "overworld.h"
 
+int8_t transition = 0;
+
 //up,down,left,right
 //1,none,2
 
@@ -793,7 +795,9 @@ void step_world(){
           break;
         }
       }
-      mode = DUNGEON;
+      mode = TO_DUNGEON;
+      transition = -SCREEN_HEIGHT/2;
+      gb.display.persistence = true;
       dungeon_generated = 0;
       dungeon_level = 0;
       previous_level = -1;

@@ -27,6 +27,8 @@ extern byte worldframe;
 extern uint16_t dudex;
 extern uint16_t dudey;
 
+extern int8_t transition;
+
 /*extern const byte dude[];
 extern const byte dudedn1[];
 extern const byte dudedn2[];

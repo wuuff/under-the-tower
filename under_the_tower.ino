@@ -78,25 +78,58 @@ void setup() {
 #define WORLD 0
 #define COMBAT 1
 #define DUNGEON 2
+//Transitions to world or dungeon modes
+#define TO_WORLD 3
+#define TO_COMBAT 4
+#define TO_DUNGEON 5
+
+#define TRANSITION_DIFF 3
 
 byte mode = WORLD;
+
+void step_transition(){
+  uint8_t i;
+  for(i = 0; i < SCREEN_HEIGHT/2+1 - abs(transition); i++ ){
+    gb.display.drawFastVLine(i,0,SCREEN_HEIGHT);
+    gb.display.drawFastVLine(SCREEN_WIDTH-i,0,SCREEN_HEIGHT);
+    gb.display.drawFastHLine(0,i,SCREEN_WIDTH);
+    gb.display.drawFastHLine(0,SCREEN_HEIGHT-i,SCREEN_WIDTH);
+  }
+  transition+=4;
+  //If we are halfway into the transition, start drawing the next scene
+  //And stop saving the last frame of the previous scene
+  if( transition >= 0 ){
+    gb.display.persistence = false;
+  }
+  //If we are done with the transition, move to the ordinary non-transition mode
+  if( transition > SCREEN_HEIGHT/2 ){
+    mode -= TRANSITION_DIFF;
+  }
+}
 
 void loop() {
   // put your main code here, to run repeatedly:
   if(gb.update()){
-    if( mode == WORLD ){
-      //draw_cache();
-      draw_world();
-
-      step_world();
-
-      //gb.display.print(random(3));
-      //else dudeanimation = 0;
-    }else if( mode == DUNGEON ){
-      step_dungeon();
-      draw_dungeon();
-    }else{ //mode is COMBAT
-      //do_combat();  //TODO: Restore combat
+    switch( mode ){
+      case TO_WORLD:
+        step_transition();
+      case WORLD:
+        if( transition >= 0 ){
+          draw_world();
+          step_world();
+        }
+        break;
+      case TO_DUNGEON:
+        step_transition();
+      case DUNGEON:
+        if( transition >= 0 ){
+          draw_dungeon();
+          step_dungeon();
+        }
+        break;
+      case COMBAT:
+        //do_combat();  //TODO: Restore combat
+        break;
     }
 
     if(gb.buttons.pressed(BTN_C)){
