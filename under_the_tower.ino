@@ -127,8 +127,16 @@ void loop() {
           step_dungeon();
         }
         break;
+      case TO_COMBAT:
+      if( transition >= 0 ){
+          do_combat();//Draw first to avoid the text overdrawing the transition
+        }
+        step_transition();
+        break;
       case COMBAT:
-        //do_combat();  //TODO: Restore combat
+        if( transition >= 0 ){
+          do_combat();
+        }
         break;
     }
 

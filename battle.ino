@@ -1,4 +1,3 @@
-#ifdef NOTDEFINED
 //Scamp: Level 1
 //Ruffian: Level 2
 //Scoundrel: Level 4
@@ -106,16 +105,25 @@ uint8_t mudlark_level = 1;
 uint8_t mudlark_health = 10;
 uint8_t mudlark_speed = 2;
 uint8_t mudlark_xp = 0;
+uint8_t mudlark_bonus_speed = 0;
+uint8_t mudlark_bonus_damage = 0;
+uint8_t mudlark_bonus_defense = 0;
 
 uint8_t shadow_level = 0;
 uint8_t shadow_health = 0;
 uint8_t shadow_speed = 2;
 uint8_t shadow_xp = 0;
+uint8_t shadow_bonus_speed = 0;
+uint8_t shadow_bonus_damage = 0;
+uint8_t shadow_bonus_defense = 0;
 
 uint8_t nurse_level = 0;
 uint8_t nurse_health = 0;
 uint8_t nurse_speed = 2;
 uint8_t nurse_xp = 0;
+uint8_t nurse_bonus_speed = 0;
+uint8_t nurse_bonus_damage = 0;
+uint8_t nurse_bonus_defense = 0;
 
 //Abilities:
 //Mudlark: Rally, scavenge
@@ -125,22 +133,35 @@ uint8_t nurse_xp = 0;
 //TODO: More effects, more items
 #define HEAL 0
 
+#define ITEM_FRUIT 0
+#define ITEM_BREAD 1
+#define ITEM_MEAT 2
+#define ITEM_TONIC 3
+#define ITEM_TEA 4
+#define ITEM_LIQUOR 5
+
 const char item_names[][8] PROGMEM = {
   "FRUIT",  // 5 HP
   "BREAD",  // 10 HP
+  "MEAT",    // 1 damage increase 
   "TONIC",  // 50% HP
   "TEA",    // 1 SP
-  "LIQUOR", // 1 damage resist
-  "MEAT"    // 1 damage increase        
+  "LIQUOR", // 1 damage resist       
 };
 
 #define INVENTORY_SIZE 6
 
-unsigned char inventory[6] = {2,1,0,0,0,0};//Each element == how much of each item
+unsigned char inventory[6] = {2,1,0,1,16,0};//Each element == how much of each item
+
+uint8_t next_combat = 10;
 
 void try_combat(){
-  if( random(16) == 0 && random(16) == 0 ){
-    mode = COMBAT;
+  next_combat--;
+  if( next_combat == 0 ){
+    mode = TO_COMBAT;
+    transition = -SCREEN_HEIGHT/2;
+    gb.display.persistence = true;
+    next_combat = random(90)+10;//10-100 steps
   }
 }
 
@@ -157,10 +178,10 @@ const char menu_text[][8] PROGMEM = {
   "HP ALL",
   "PROTECT",
   "OTHER",
-  "ITEM",
+  "FOOD",
+  "DRINK",
   "RUN",
   "",//TODO: optimize these out
-  "",
   };
 
 const char combat_text[][8] PROGMEM = {
@@ -171,7 +192,9 @@ const char combat_text[][8] PROGMEM = {
   " FALLS",
   "YOU WIN",
   " XP GET",
-  "TRAPPED"
+  "TRAPPED",
+  " SPD UP",
+  " FINDS\n",
 };
 
 #define MUDLARK_MENU 0
@@ -180,7 +203,8 @@ const char combat_text[][8] PROGMEM = {
 #define SECONDARY_MENU 3
 #define ENEMY_MENU 4
 #define ALLY_MENU 5
-#define ITEM_MENU 6
+#define FOOD_MENU 6
+#define DRINK_MENU 7
 // More...
 
 #define PRECOMBAT -1
@@ -255,11 +279,13 @@ uint8_t append_to_msg_buffer(uint8_t index, const char arr[][8], uint8_t offset)
 #define EFALL 2
 #define PWIN 3
 #define PHEAL 4
+#define PSPEED 5
+#define PITEM 6
 
 //TODO: space optimize this
 void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uint8_t type){
   uint8_t offset = 0;
-  if( type == PL2EN || type == PHEAL )
+  if( type == PL2EN || type == PHEAL || type == PSPEED || type == PITEM )
     offset = append_to_msg_buffer( source, player_names, offset );
   else if( type == EN2PL )
     offset = append_to_msg_buffer( source, enemy_names, offset );
@@ -281,6 +307,12 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
   }
   if( type == PHEAL ){
     offset = append_to_msg_buffer( 3, combat_text, offset );
+  }else if( type == PSPEED ){
+    offset = append_to_msg_buffer( 8, combat_text, offset );
+  }else if( type == PITEM ){
+    offset = append_to_msg_buffer( 9, combat_text, offset );
+    combat_message[offset++] = ' ';
+    offset = append_to_msg_buffer( amount, item_names, offset );
   }else{
     offset = append_to_msg_buffer( 0, combat_text, offset );
   }
@@ -288,25 +320,28 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     offset = append_to_msg_buffer( dest, enemy_names, offset );
   else if( type == EN2PL )
     offset = append_to_msg_buffer( dest, player_names, offset );
-  offset = append_to_msg_buffer( 1, combat_text, offset );
-  combat_message[offset++] = amount/100+'0';
-  combat_message[offset++] = amount%100/10+'0';
-  combat_message[offset++] = amount%100%10+'0';
-  offset = append_to_msg_buffer( 2, combat_text, offset );
+  if( type != PSPEED && type != PITEM ){
+    offset = append_to_msg_buffer( 1, combat_text, offset );
+    combat_message[offset++] = amount/100+'0';
+    combat_message[offset++] = amount%100/10+'0';
+    combat_message[offset++] = amount%100%10+'0';
+    offset = append_to_msg_buffer( 2, combat_text, offset );
+  }
   combat_message[offset] = '\0';
 }
 
 void draw_menu(byte index){
   gb.display.cursorY = SCREEN_HEIGHT/2-6;
+  uint8_t offset = 0;
   for(byte i = 0; i < 4; i++){
     gb.display.cursorX = 1;
     gb.display.cursorY+=6;
     if( combat_selection == i ) gb.display.print(F("\20"));
     gb.display.cursorX = 4;
     if( index <= SECONDARY_MENU ){
-      copy_to_buffer(index*4+i,menu_text);//Ordinary menus with fixed text
+      offset = append_to_msg_buffer(index*4+i,menu_text,0);//Ordinary menus with fixed text
     }else if(index == ENEMY_MENU){//Dynamically generated menus with text for allies/enemies
-      combat_buffer[0] = '\0';//If we don't copy anything in, print nothing
+      combat_message[0] = '\0';//If we don't copy anything in, print nothing
       //Menu for selecting an enemy to attack
       /*
           0 1 2 Result
@@ -323,7 +358,7 @@ void draw_menu(byte index){
         if( enemies[j] != -1 ){
           yeses++;
           if( yeses > i ){
-            copy_to_buffer(enemies[j],enemy_names);
+            offset = append_to_msg_buffer(enemies[j],enemy_names,0);
             break;
           }
         }
@@ -352,25 +387,30 @@ void draw_menu(byte index){
           copy_to_buffer(enemies[2],enemy_names);
         }//Otherwise draw nothing
       }*/
-    }else if( index == ITEM_MENU ){
-      combat_buffer[0] = '\0';//If we don't copy anything in, print nothing
+    }else if( index == FOOD_MENU || index == DRINK_MENU ){
+      combat_message[0] = '\0';//If we don't copy anything in, print nothing
       uint8_t item = 0;
-      for( uint8_t j = 0; j < INVENTORY_SIZE; j++ ){
+      uint8_t j = index == FOOD_MENU ? 0 : 3;
+      for( ; j < (index == FOOD_MENU ? INVENTORY_SIZE/2: INVENTORY_SIZE); j++ ){
         if( inventory[j] > 0 ) item++;
         if( item == i+1 ){
-          copy_to_buffer(j,item_names);
+          offset = append_to_msg_buffer(j,item_names,0);
+          combat_message[offset++] = 'x';
+          combat_message[offset++] = inventory[j]/10+'0';
+          combat_message[offset++] = inventory[j]%10+'0';
           break;
         }
       }
     }else{
       //TODO: allies menu
     }
-    gb.display.print(combat_buffer);
+    combat_message[offset] = '\0';
+    gb.display.print(combat_message);
   }
 }
 
 void do_combat_step(){
-  combat_status[MUDLARK] += mudlark_speed;
+  combat_status[MUDLARK] += mudlark_speed + mudlark_bonus_speed;
   if( shadow_level > 0 ) combat_status[SHADOW] += shadow_speed;
   if( nurse_level > 0 ) combat_status[NURSE] += nurse_speed;
   if( enemies[0] != -1 ) combat_status[ENEMY1] += pgm_read_byte(&enemy_speeds[enemies[0]]);
@@ -382,6 +422,7 @@ void do_combat_step(){
     if( combat_status[i] > combat_status[maxi] ) maxi = i;
   }
   combat_mode = maxi;
+  combat_selection = 0;//Force the first item to be selected by default
   menu_selection = maxi;//Only relevant for player characters?
   combat_status[maxi] = 0;//Reset that unit back to starting value
 }
@@ -497,12 +538,28 @@ void do_combat(){
       if(menu_selection == MUDLARK_MENU && combat_selection == 0){
         menu_selection = ENEMY_MENU;
         combat_selection = 0;
+      }else if( menu_selection == MUDLARK_MENU && combat_selection == 2 ){ //Scavenge
+        if( random(100) < 75 ){ //Highest chance to get fruit
+          inventory[ITEM_FRUIT]++;
+          copy_action_to_msg_buffer(0,0,ITEM_FRUIT, PITEM);
+        }else if( random(100) < 50 ){ //Second highest chance to get bread
+          inventory[ITEM_BREAD]++;
+          copy_action_to_msg_buffer(0,0,ITEM_BREAD, PITEM);
+        }else{ //All the rest of the items have an equal chance
+          uint8_t chosen = random(4) + 2;
+          inventory[chosen]++;
+          copy_action_to_msg_buffer(0,0, chosen, PITEM);
+        }
+        combat_mode = MESSAGE;
       }else if( menu_selection == MUDLARK_MENU && combat_selection == 3 ){
         menu_selection = SECONDARY_MENU;
         combat_selection = 0;
       }else if( menu_selection == SECONDARY_MENU ){
-        if( combat_selection == 0 ){ // ITEM
-          menu_selection = ITEM_MENU;
+        if( combat_selection == 0 ){ // FOOD
+          menu_selection = FOOD_MENU;
+          combat_selection = 0;
+        }else if( combat_selection == 1 ){ // DRINK
+          menu_selection = DRINK_MENU;
           combat_selection = 0;
         }else{ // 1 == RUN
           if( random(2) == 0 ){
@@ -531,24 +588,33 @@ void do_combat(){
           enemy_health[combat_selection]-=damage;
         }
         combat_mode = MESSAGE;
-      }else if( menu_selection == ITEM_MENU ){
+      }else if( menu_selection == FOOD_MENU || menu_selection == DRINK_MENU ){
         uint8_t item = 0;
-        for( uint8_t i = 0; i < INVENTORY_SIZE; i++ ){
-          if( inventory[i] != 0 ) item++;
+        for( uint8_t i = 0; i < INVENTORY_SIZE/2; i++ ){
+          if( inventory[menu_selection == FOOD_MENU ? i : i + (INVENTORY_SIZE/2)] != 0 ) item++;
           if( item == combat_selection+1 ){
-            item = i;
+            item = menu_selection == FOOD_MENU ? i : i + (INVENTORY_SIZE/2);
             break;
           }
         }
-        if( item == 0 ){
+        if( item == ITEM_FRUIT ){
           mudlark_health+=5;
           inventory[item]--;
           copy_action_to_msg_buffer(0,0,5, PHEAL);
-        }else if( item == 1 ){
+        }else if( item == ITEM_BREAD ){
           mudlark_health+=10;
           inventory[item]--;
           copy_action_to_msg_buffer(0,0,10, PHEAL);
+        }else if( item == ITEM_TONIC ){
+          mudlark_health+=(mudlark_level*10/2);//Heal 50%
+          inventory[item]--;
+          copy_action_to_msg_buffer(0,0,(mudlark_level*10/2), PHEAL);
+        }else if( item == ITEM_TEA ){
+          mudlark_bonus_speed++;//Speed up
+          inventory[item]--;
+          copy_action_to_msg_buffer(0,0,1, PSPEED);
         }
+        if( mudlark_health > mudlark_level*10 ) mudlark_health = mudlark_level*10;//Cap off healing
         combat_mode = MESSAGE;
       }
     }else if(gb.buttons.pressed(BTN_B)){
@@ -569,7 +635,7 @@ void do_combat(){
       if( menu_selection == ENEMY_MENU || menu_selection == SECONDARY_MENU ){
         menu_selection = MUDLARK_MENU;
         combat_selection = 0;
-      }else if( menu_selection == ITEM_MENU ){
+      }else if( menu_selection == FOOD_MENU || menu_selection == DRINK_MENU ){
         menu_selection = SECONDARY_MENU;
         combat_selection = 0;
       }
@@ -583,11 +649,11 @@ void do_combat(){
         }
       }
     }else if( menu_selection == SECONDARY_MENU ){
-      mod = 2;
-    }else if( menu_selection == ITEM_MENU ){
+      mod = 3;
+    }else if( menu_selection == FOOD_MENU || menu_selection == DRINK_MENU ){
       uint8_t item = 0;
-      for( uint8_t i = 0; i < INVENTORY_SIZE; i++ ){
-        if( inventory[i] != 0 ) item++;
+      for( uint8_t i = 0; i < INVENTORY_SIZE/2; i++ ){
+        if( inventory[menu_selection == FOOD_MENU ? i : i + (INVENTORY_SIZE/2)] != 0 ) item++;
       }
       if( item < 4 ) mod = item; 
     }
@@ -619,7 +685,7 @@ void do_combat(){
   }
 
   //DEBUG TODO: remove
-  gb.display.cursorX = 0;
+  /*gb.display.cursorX = 0;
   gb.display.cursorY = 6;
   gb.display.print((char)(combat_mode+'0'));
   gb.display.print(' ');
@@ -635,10 +701,9 @@ void do_combat(){
   gb.display.cursorY = 18;
   for( uint8_t i = 0; i < 3; i++ ){
     gb.display.print((char)(enemies[i]+'1'));
-  }
+  }*/
 
   gb.display.drawRect(0,SCREEN_HEIGHT/2-1,SCREEN_WIDTH,SCREEN_HEIGHT/2+1);
   
   
 }
-#endif

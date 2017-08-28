@@ -828,5 +828,9 @@ void step_world(){
     player_moving = 1;
     //try_combat();  TODO: Restore combat
   }
+
+  if( player_moving ){
+    try_combat();
+  }
 }
 
