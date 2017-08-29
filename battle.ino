@@ -3,7 +3,108 @@
 //Scoundrel: Level 4
 //Thief (or maybe Shadow) recruits you on his quest
 
-const byte enemy_levels[] PROGMEM = {
+struct enemy{
+  int8_t lvl;
+  uint8_t spd;
+  uint8_t img;
+  uint8_t nme;
+};
+
+struct enemy enemy_buffer[3];//Store data for enemies to battle
+
+const struct enemy world_spawns[4][4][3] PROGMEM = {
+  {
+    // Top far left (Rich District)
+    {
+      // Wow Rat, Snob, Richman
+      // Rat, Scamp, Thug
+      {1,5,1,0},{1,4,0,1},{4,2,0,3},
+    },
+    // Top center left
+    {
+      // Rat, Scamp, Thug
+      {1,5,1,0},{1,4,0,1},{4,2,0,3},
+    },
+    // Top center right
+    {
+      // Rat, Scamp, Thug
+      {1,5,1,0},{1,4,0,1},{4,2,0,3},
+    },
+    // Top far right
+    {
+      // Rat, Scamp, Thug
+      {1,5,1,0},{1,4,0,1},{4,2,0,3},
+    }
+  },
+  {
+    // Bottom far left (Left Sewer District)
+    {
+      // Rat, Scamp, Thug
+      {1,5,1,0},{1,4,0,1},{4,2,0,3},
+    },
+    // Bottom center left (Right Sewer District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    },
+    // Bottom center right (Bottom Left Dock District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    },
+    // Bottom far right (Bottom Right Dock District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    }
+  },
+  {
+    // Mid bottom far left (Left Factory District)
+    {
+      // Rat, Ruffian, Thug
+      {1,5,1,0},{2,3,0,2},{4,2,0,3},
+    },
+    // Mid bottom center left (Right Factory District)
+    {
+      // Big Rat, Ruffian, Thug
+      {4,5,1,4},{2,3,0,2},{4,2,0,3},
+    },
+    // Mid bottom center right (Top Left Dock District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    },
+    // Mid bottom far right (Top Right Dock District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    }
+  },
+  {
+    // Bottom far left (Left Sewer District)
+    {
+      // Rat, Scamp, Thug
+      {1,5,1,0},{1,4,0,1},{4,2,0,3},
+    },
+    // Bottom center left (Right Sewer District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    },
+    // Bottom center right (Bottom Left Dock District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    },
+    // Bottom far right (Bottom Right Dock District)
+    {
+      // Rat, Scamp, Ruffian
+      {1,5,1,0},{1,4,0,1},{2,3,0,2},
+    }
+  }
+};
+
+/*const byte enemy_levels[] PROGMEM = {
 1,
 1,
 2,
@@ -25,16 +126,40 @@ const byte enemy_imgs[] PROGMEM = {
 1,
 0,
 2
-};
+};*/
 
 const char enemy_names[][8] PROGMEM = {
-"SCAMP",
 "RAT",
+"SCAMP",
 "RUFFIAN",
 "THUG",
 "BIG RAT",
 "PATRON",
-"BOUNCER"
+"BOUNCER",
+"SLAVER",
+"SEA RAT",
+"SWABBIE",
+"SAILOR",
+"SKIPPER",
+"CAPTAIN",
+"BAD RAT",
+"WATCHER",
+"BRUISER",
+"MUSCLER",
+"OVERMAN",
+"DOCTOR",
+"PATIENT",
+"SUBJECT",
+"MUTANT",
+"MADMAN",
+"WOW RAT",
+"SNOB",
+"RICHMAN",
+"MAX RAT",
+"GUARD",
+"GOLEM",
+"OFFICER",
+"LEADER"
 };
 
 const byte enemybmps[] PROGMEM = {8,16, // Scoundrel
@@ -103,7 +228,7 @@ const char player_names[][8] PROGMEM = {
 
 uint8_t mudlark_level = 1;
 uint8_t mudlark_health = 10;
-uint8_t mudlark_speed = 2;
+uint8_t mudlark_speed = 4;
 uint8_t mudlark_xp = 0;
 uint8_t mudlark_bonus_speed = 0;
 uint8_t mudlark_bonus_damage = 0;
@@ -111,7 +236,7 @@ uint8_t mudlark_bonus_defense = 0;
 
 uint8_t shadow_level = 0;
 uint8_t shadow_health = 0;
-uint8_t shadow_speed = 2;
+uint8_t shadow_speed = 4;
 uint8_t shadow_xp = 0;
 uint8_t shadow_bonus_speed = 0;
 uint8_t shadow_bonus_damage = 0;
@@ -119,7 +244,7 @@ uint8_t shadow_bonus_defense = 0;
 
 uint8_t nurse_level = 0;
 uint8_t nurse_health = 0;
-uint8_t nurse_speed = 2;
+uint8_t nurse_speed = 4;
 uint8_t nurse_xp = 0;
 uint8_t nurse_bonus_speed = 0;
 uint8_t nurse_bonus_damage = 0;
@@ -225,34 +350,50 @@ char combat_message[64];//Max of 64 characters in message, which should be plent
 int8_t combat_status[6] = {0,0,0,0,0,0};//Determines who moves next
 uint8_t combat_xp = 0;
 
-int8_t enemies[3];
+//int8_t enemies[3];
 uint8_t enemy_health[3];
 
 uint8_t calculate_damage(uint8_t lvl){
   return lvl*10/8;
 }
 
+void load_enemy_data(uint8_t index, uint8_t slot){
+  //Right now only support overworld enemy generation
+  //TODO: add support for dungeon spawn tables
+
+  //Use dudex and dudey to determine which pool to spawn enemies from
+  const struct enemy* en = &(world_spawns[dudey/8/16][dudex/8/16][index]);
+  enemy_buffer[slot].lvl = pgm_read_byte(&(en->lvl));
+  enemy_buffer[slot].spd = pgm_read_byte(&(en->spd));
+  enemy_buffer[slot].img = pgm_read_byte(&(en->img));
+  enemy_buffer[slot].nme = pgm_read_byte(&(en->nme));
+}
+
 void gen_enemies(){
+  uint8_t enemy_index = 0;
   combat_xp = 0;
   //Always generate center enemy
-  enemies[1] = random(3);
-  combat_xp+=pgm_read_byte(&enemy_levels[enemies[1]]);
-  enemy_health[1] = pgm_read_byte(&enemy_levels[enemies[1]])*10/2;
+  enemy_index = random(3);
+  load_enemy_data(enemy_index,1);
+  combat_xp+=enemy_buffer[1].lvl;
+  enemy_health[1] = enemy_buffer[1].lvl*10/2;
   //50% chance of left enemy
   if( random(2) == 0 ){
-    enemies[0] = random(3);
-    combat_xp+=pgm_read_byte(&enemy_levels[enemies[0]]);
-    enemy_health[0] = pgm_read_byte(&enemy_levels[enemies[0]])*10/2;
+    enemy_index = random(3);
+    load_enemy_data(enemy_index,0);
+    combat_xp+=enemy_buffer[0].lvl;
+    enemy_health[0] = enemy_buffer[0].lvl*10/2;
   }else{
-    enemies[0] = -1;
+    enemy_buffer[0].lvl = -1;
   }
   //50% chance of right enemy
   if( random(2) == 0 ){
-    enemies[2] = random(3);
-    combat_xp+=pgm_read_byte(&enemy_levels[enemies[2]]);
-    enemy_health[2] = pgm_read_byte(&enemy_levels[enemies[2]])*10/2;
+    enemy_index = random(3);
+    load_enemy_data(enemy_index,2);
+    combat_xp+=enemy_buffer[2].lvl;
+    enemy_health[2] = enemy_buffer[2].lvl*10/2;
   }else{
-    enemies[2] = -1;
+    enemy_buffer[2].lvl = -1;
   }
 }
 
@@ -355,38 +496,14 @@ void draw_menu(byte index){
       byte yeses = 0;
       for( byte j = 0; j < 3; j++ )
       {
-        if( enemies[j] != -1 ){
+        if( enemy_buffer[j].lvl != -1 ){
           yeses++;
           if( yeses > i ){
-            offset = append_to_msg_buffer(enemies[j],enemy_names,0);
+            offset = append_to_msg_buffer(enemy_buffer[j].nme,enemy_names,0);
             break;
           }
         }
       }
-      /*
-      if( i == 0 ){
-        if( enemies[0] != -1 ){
-          copy_to_buffer(enemies[0],enemy_names);
-        }else if( enemies[1] != -1 ){
-          copy_to_buffer(enemies[1],enemy_names);
-        }else{
-          copy_to_buffer(enemies[2],enemy_names);
-        }
-      }else if( i == 1 ){
-        if( enemies[0] != -1 ){
-          if( enemies[1] != -1 ){
-            copy_to_buffer(enemies[1],enemy_names);
-          }else if( enemies[2] !-){
-            copy_to_buffer(enemies[1],enemy_names);
-          }
-        }else if( enemies[1] != -1 ){
-          copy_to_buffer(enemies[2],enemy_names);
-        }//Otherwise draw nothing
-      }else if( i == 2 ){
-        if( enemies[2] != -1 ){
-          copy_to_buffer(enemies[2],enemy_names);
-        }//Otherwise draw nothing
-      }*/
     }else if( index == FOOD_MENU || index == DRINK_MENU ){
       combat_message[0] = '\0';//If we don't copy anything in, print nothing
       uint8_t item = 0;
@@ -413,9 +530,9 @@ void do_combat_step(){
   combat_status[MUDLARK] += mudlark_speed + mudlark_bonus_speed;
   if( shadow_level > 0 ) combat_status[SHADOW] += shadow_speed;
   if( nurse_level > 0 ) combat_status[NURSE] += nurse_speed;
-  if( enemies[0] != -1 ) combat_status[ENEMY1] += pgm_read_byte(&enemy_speeds[enemies[0]]);
-  if( enemies[1] != -1 ) combat_status[ENEMY2] += pgm_read_byte(&enemy_speeds[enemies[1]]);
-  if( enemies[2] != -1 ) combat_status[ENEMY3] += pgm_read_byte(&enemy_speeds[enemies[2]]);
+  if( enemy_buffer[0].lvl != -1 ) combat_status[ENEMY1] += enemy_buffer[0].spd;
+  if( enemy_buffer[1].lvl != -1 ) combat_status[ENEMY2] += enemy_buffer[1].spd;
+  if( enemy_buffer[2].lvl != -1 ) combat_status[ENEMY3] += enemy_buffer[2].spd;
 
   uint8_t maxi = 0;
   for(uint8_t i = 0; i < 6; i++){
@@ -440,23 +557,23 @@ void do_combat(){
   //graphics hardcoded for now
   gb.display.cursorY = 0;
 
-  if(enemies[0] != -1){
+  if(enemy_buffer[0].lvl != -1){
     gb.display.cursorX = 0;
-    copy_to_buffer(enemies[0],enemy_names);
+    copy_to_buffer(enemy_buffer[0].nme,enemy_names);
     gb.display.print(combat_buffer);
-    gb.display.drawBitmap(SCREEN_WIDTH/4-4,SCREEN_HEIGHT/8,&enemybmps[pgm_read_byte(&enemy_imgs[enemies[0]])*18]);
+    gb.display.drawBitmap(SCREEN_WIDTH/4-4,SCREEN_HEIGHT/8,&enemybmps[enemy_buffer[0].img*18]);
   }
-  if(enemies[1] != -1){
+  if(enemy_buffer[1].lvl != -1){
     gb.display.cursorX = SCREEN_WIDTH/2-(3*4)-2;
-    copy_to_buffer(enemies[1],enemy_names);
+    copy_to_buffer(enemy_buffer[1].nme,enemy_names);
     gb.display.print(combat_buffer);
-    gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/8,&enemybmps[pgm_read_byte(&enemy_imgs[enemies[1]])*18]);
+    gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/8,&enemybmps[enemy_buffer[1].img*18]);
   }
-  if(enemies[2] != -1){
+  if(enemy_buffer[2].lvl != -1){
     gb.display.cursorX = SCREEN_WIDTH-(7*4);
-    copy_to_buffer(enemies[2],enemy_names);
+    copy_to_buffer(enemy_buffer[2].nme,enemy_names);
     gb.display.print(combat_buffer);
-    gb.display.drawBitmap(SCREEN_WIDTH/4*3-4,SCREEN_HEIGHT/8,&enemybmps[pgm_read_byte(&enemy_imgs[enemies[2]])*18]);
+    gb.display.drawBitmap(SCREEN_WIDTH/4*3-4,SCREEN_HEIGHT/8,&enemybmps[enemy_buffer[2].img*18]);
   }
 
   //If a message is displayed (dismissing the message steps combat forward)
@@ -473,7 +590,7 @@ void do_combat(){
           return;
         }
         //First check if all enemies have died
-        if( enemies[0] == -1 && enemies[1] == -1 && enemies[2] == -1 ){
+        if( enemy_buffer[0].lvl == -1 && enemy_buffer[1].lvl == -1 && enemy_buffer[2].lvl == -1 ){
           step_forward = 0;
           combat_mode = VICTORY;
           copy_action_to_msg_buffer(0,0,combat_xp, PWIN);
@@ -487,10 +604,10 @@ void do_combat(){
         }
         //Second do a check whether anyone has died
         for( byte i = 0; i < 3; i++ ){
-          if( enemies[i] != -1 && enemy_health[i] == 0 ){
-            copy_action_to_msg_buffer(enemies[i],0,0, EFALL);
+          if( enemy_buffer[i].lvl != -1 && enemy_health[i] == 0 ){
+            copy_action_to_msg_buffer(enemy_buffer[i].nme,0,0, EFALL);
             combat_status[ENEMY1+i] = -1;
-            enemies[i] = -1;//This will break center enemy TODO: support absence of center enemy
+            enemy_buffer[i].lvl = -1;//This will break center enemy TODO: support absence of center enemy
             step_forward = 0;
             break;
           }
@@ -572,16 +689,16 @@ void do_combat(){
         }
       }else if( menu_selection == ENEMY_MENU ){
         uint8_t damage = calculate_damage(mudlark_level)*2;//Mudlark does double base damage
-        if( combat_selection == 1 && enemies[0] == -1 ){
+        if( combat_selection == 1 && enemy_buffer[0].lvl == -1 ){
           combat_selection = 2;//Must be the third one
         }else{
           for( ; combat_selection < 3; combat_selection++ ){
-            if( enemies[combat_selection] != -1 ){
+            if( enemy_buffer[combat_selection].lvl != -1 ){
               break;  // As soon as we find an existing enemy, that's the one that was selected
             }
           }
         }
-        copy_action_to_msg_buffer(0,enemies[combat_selection],damage, PL2EN);
+        copy_action_to_msg_buffer(0,enemy_buffer[combat_selection].nme,damage, PL2EN);
         if( damage > enemy_health[combat_selection] ){
           enemy_health[combat_selection] = 0;
         }else{
@@ -644,7 +761,7 @@ void do_combat(){
     if( menu_selection == ENEMY_MENU ){
       mod--;
       for( byte i = 0; i < 3; i++ ){
-        if( enemies[i] == -1 ){
+        if( enemy_buffer[i].lvl == -1 ){
           mod--;
         }
       }
@@ -673,8 +790,8 @@ void do_combat(){
   else if( combat_mode >= ENEMY1 && combat_mode <= ENEMY3 ){
     //if(gb.buttons.pressed(BTN_A)){
     //For now only target Mudlark.  TODO: random targeting
-    uint8_t damage = calculate_damage(pgm_read_byte(&enemy_levels[enemies[combat_mode-ENEMY1]]));
-    copy_action_to_msg_buffer(enemies[combat_mode-ENEMY1],0,damage, EN2PL);
+    uint8_t damage = calculate_damage(enemy_buffer[combat_mode-ENEMY1].lvl);
+    copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,0,damage, EN2PL);
     if( damage > mudlark_health ){
       mudlark_health = 0;
     }else{
@@ -685,9 +802,11 @@ void do_combat(){
   }
 
   //DEBUG TODO: remove
-  /*gb.display.cursorX = 0;
+  gb.display.cursorX = 0;
   gb.display.cursorY = 6;
-  gb.display.print((char)(combat_mode+'0'));
+  gb.display.println(enemy_buffer[1].nme);
+  gb.display.println(enemy_buffer[1].lvl);
+  /*gb.display.print((char)(combat_mode+'0'));
   gb.display.print(' ');
   gb.display.print((char)(mudlark_level+'0'));
   gb.display.print(' ');
