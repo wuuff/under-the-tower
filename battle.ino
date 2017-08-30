@@ -316,7 +316,7 @@ const char player_names[][8] PROGMEM = {
 };
 
 uint8_t mudlark_level = 1;
-uint8_t mudlark_health = 10;
+uint16_t mudlark_health = 10;
 uint8_t mudlark_speed = 4;
 uint8_t mudlark_xp = 0;
 uint8_t mudlark_bonus_speed = 0;
@@ -355,8 +355,8 @@ uint8_t nurse_bonus_defense = 0;
 #define ITEM_LIQUOR 5
 
 const char item_names[][8] PROGMEM = {
-  "FRUIT",  // 5 HP
-  "BREAD",  // 10 HP
+  "FRUIT",  // 10% HP
+  "BREAD",  // 15% HP
   "MEAT",    // 1 damage increase 
   "TONIC",  // 50% HP
   "TEA",    // 1 SP
@@ -713,10 +713,10 @@ void do_combat(){
     gb.display.drawRect(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+1, SCREEN_WIDTH/2-2, 3);
     gb.display.drawLine(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+2, SCREEN_WIDTH/2+((SCREEN_WIDTH/2-4)*mudlark_health)/(mudlark_level*10), SCREEN_HEIGHT/2+2);
     
-    gb.display.cursorX = SCREEN_WIDTH-29;//7*4+1
+    gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
     gb.display.cursorY = SCREEN_HEIGHT/2+6;
     gb.display.print(F("MUDLARK"));
-    gb.display.cursorX = SCREEN_WIDTH-29;//7*4+1
+    gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
     gb.display.cursorY = SCREEN_HEIGHT/2+12;
     gb.display.print(mudlark_health);
     gb.display.print(F("/"));
@@ -725,7 +725,7 @@ void do_combat(){
     //DEBUG
     //gb.display.print(F(" S"));
     //gb.display.print(mudlark_speed);
-    gb.display.cursorX = SCREEN_WIDTH-29;//7*4+1
+    gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
     gb.display.cursorY = SCREEN_HEIGHT/2+18;
     gb.display.print(F("XP"));
     gb.display.print(mudlark_xp);
@@ -746,7 +746,7 @@ void do_combat(){
         menu_selection = ENEMY_MENU;
         combat_selection = 0;
       }else if( menu_selection == MUDLARK_MENU && combat_selection == 2 ){ //Scavenge
-        if( random(100) < 75 ){ //Highest chance to get fruit
+        if( random(100) < 50 ){ //Highest chance to get fruit
           inventory[ITEM_FRUIT]++;
           copy_action_to_msg_buffer(0,0,ITEM_FRUIT, PITEM);
         }else if( random(100) < 50 ){ //Second highest chance to get bread
@@ -805,13 +805,13 @@ void do_combat(){
           }
         }
         if( item == ITEM_FRUIT ){
-          mudlark_health+=5;
+          mudlark_health+=mudlark_level;//Heal 10%
           inventory[item]--;
-          copy_action_to_msg_buffer(0,0,5, PHEAL);
+          copy_action_to_msg_buffer(0,0,mudlark_level, PHEAL);
         }else if( item == ITEM_BREAD ){
-          mudlark_health+=10;
+          mudlark_health+=mudlark_level*3/2;//Heal 15%
           inventory[item]--;
-          copy_action_to_msg_buffer(0,0,10, PHEAL);
+          copy_action_to_msg_buffer(0,0,mudlark_level*3/2, PHEAL);
         }else if( item == ITEM_TONIC ){
           mudlark_health+=(mudlark_level*10/2);//Heal 50%
           inventory[item]--;
