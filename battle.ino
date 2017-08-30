@@ -12,121 +12,83 @@ struct enemy{
 
 struct enemy enemy_buffer[3];//Store data for enemies to battle
 
-const struct enemy world_spawns[4][4][3] PROGMEM = {
-  {
-    // Top far left (Rich District)
-    {
-      // Wow Rat, Snob, Richman
-      // Rat, Scamp, Thug
-      {1,5,1,0},{1,4,0,1},{4,2,0,3},
-    },
-    // Top center left
-    {
-      // Rat, Scamp, Thug
-      {1,5,1,0},{1,4,0,1},{4,2,0,3},
-    },
-    // Top center right
-    {
-      // Rat, Scamp, Thug
-      {1,5,1,0},{1,4,0,1},{4,2,0,3},
-    },
-    // Top far right
-    {
-      // Rat, Scamp, Thug
-      {1,5,1,0},{1,4,0,1},{4,2,0,3},
-    }
-  },
-  {
-    // Bottom far left (Left Sewer District)
-    {
-      // Rat, Scamp, Thug
-      {1,5,1,0},{1,4,0,1},{4,2,0,3},
-    },
-    // Bottom center left (Right Sewer District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    },
-    // Bottom center right (Bottom Left Dock District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    },
-    // Bottom far right (Bottom Right Dock District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    }
-  },
-  {
-    // Mid bottom far left (Left Factory District)
-    {
-      // Rat, Ruffian, Thug
-      {1,5,1,0},{2,3,0,2},{4,2,0,3},
-    },
-    // Mid bottom center left (Right Factory District)
-    {
-      // Big Rat, Ruffian, Thug
-      {4,5,1,4},{2,3,0,2},{4,2,0,3},
-    },
-    // Mid bottom center right (Top Left Dock District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    },
-    // Mid bottom far right (Top Right Dock District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    }
-  },
-  {
-    // Bottom far left (Left Sewer District)
-    {
-      // Rat, Scamp, Thug
-      {1,5,1,0},{1,4,0,1},{4,2,0,3},
-    },
-    // Bottom center left (Right Sewer District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    },
-    // Bottom center right (Bottom Left Dock District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    },
-    // Bottom far right (Bottom Right Dock District)
-    {
-      // Rat, Scamp, Ruffian
-      {1,5,1,0},{1,4,0,1},{2,3,0,2},
-    }
-  }
-};
+#define RAT 0
+#define SCAMP 1
+#define RUFFIAN 2
+#define THUG 3
+#define BIG_RAT 4
+#define PATRON 5
+#define BOUNCER 6
+#define SLAVER 7
+#define SEA_RAT 8
+#define SWABBIE 9
+#define SAILOR 10
+#define SKIPPER 11
+#define CAPTAIN 12
+#define BAD_RAT 13
+#define WATCHER 14
+#define BRUISER 15
+#define MUSCLER 16
+#define OVERMAN 17
+#define DOCTOR 18
+#define PATIENT 19
+#define SUBJECT 20
+#define MUTANT 21
+#define MADMAN 22
+#define WOW_RAT 23
+#define SNOB 24
+#define RICHMAN 25
+#define MAX_RAT 26
+#define GUARD 27
+#define GOLEM 28
+#define OFFICER 29
+#define LEADER 30
+#define CRAB 31
+#define EN_SHADOW 32
 
-/*const byte enemy_levels[] PROGMEM = {
-1,
-1,
-2,
-4 
+//This is not efficient, because there is always an
+//entry for the enemy name even though every enemy has
+//a unique name and I don't want two different enemies 
+//with the same name.  However, the way I copy names into
+//the buffer uses a generic approach that always copies from an
+//array of 8-char strings in progmem, and I don't want to change all
+//that code for a special case with the name!  Therefore, this
+//approach is a bit inefficient because refactoring is a huge chore.
+const struct enemy enemies[] PROGMEM = {
+  {1,5,1,RAT},
+  {1,4,0,SCAMP},
+  {2,3,0,RUFFIAN},
+  {4,2,0,THUG},
+  {4,5,1,BIG_RAT},
+  {5,4,0,PATRON},
+  {5,5,2,BOUNCER},
+  {8,5,0,SLAVER},
+  {8,6,1,SEA_RAT},
+  {9,4,0,SWABBIE},
+  {11,3,0,SAILOR},
+  {10,5,0,SKIPPER},
+  {15,4,0,CAPTAIN},
+  {14,7,1,BAD_RAT},
+  {15,5,0,WATCHER},
+  {18,3,2,BRUISER},
+  {20,2,2,MUSCLER},
+  {25,3,2,OVERMAN},
+  {25,4,0,DOCTOR},
+  {26,5,0,PATIENT},
+  {26,6,0,SUBJECT},
+  {26,7,0,MUTANT},
+  {32,7,0,MADMAN},
+  {30,7,1,WOW_RAT},
+  {32,3,0,SNOB},
+  {35,2,0,RICHMAN},
+  {36,7,1,MAX_RAT},
+  {38,4,0,GUARD},
+  {42,2,0,GOLEM},
+  {40,4,0,OFFICER},
+  {50,7,0,LEADER},
+  {1,2,3,CRAB},
+  {8,7,0,EN_SHADOW},
 };
-
-const byte enemy_speeds[] PROGMEM = {
-2,
-3,
-2,
-2  
-};
-
-const byte enemy_imgs[] PROGMEM = {
-0,
-1,
-0,
-0,
-1,
-0,
-2
-};*/
 
 const char enemy_names[][8] PROGMEM = {
 "RAT",
@@ -159,7 +121,9 @@ const char enemy_names[][8] PROGMEM = {
 "GUARD",
 "GOLEM",
 "OFFICER",
-"LEADER"
+"LEADER",
+"CRAB",
+"SHADOW"
 };
 
 const byte enemybmps[] PROGMEM = {8,16, // Scoundrel
@@ -213,7 +177,132 @@ B01100110,
 B01100110,
 B00100100,
 B01100110,
+8,16,                   // Crab
+B00000000,
+B00000000,
+B00000000,
+B00000000,
+B00000000,
+B00000000,
+B01000010,
+B10000001,
+B11000011,
+B10000001,
+B10111101,
+B01000010,
+B10101001,
+B10000001,
+B01111110,
+B00100100,
 };
+
+const uint8_t world_spawns[4][4][3] PROGMEM = {
+  {
+    // Top far left (Rich District)
+    {
+      // Wow Rat, Snob, Richman
+      WOW_RAT,SNOB,RICHMAN
+    },
+    // Top center left (Right Rich District)
+    {
+      WOW_RAT,SNOB,RICHMAN
+    },
+    // Top center right (Top Left Medical District
+    {
+      WOW_RAT,PATIENT,SUBJECT
+    },
+    // Top far right (Top Right Medical District)
+    {
+      WOW_RAT,SUBJECT,MUTANT
+    }
+  },
+  {
+    // Mid top far left (Red Light District)
+    {
+      RAT,PATRON,BOUNCER
+    },
+    // Mid top center left (TOWER DISTRICT)
+    {
+      BAD_RAT,BRUISER,MUSCLER //Problem here is that a tiny bit of this area is in a much earlier place
+    },
+    // Mid top center right (Bottom Left Medical District)
+    {
+      WATCHER,BRUISER,DOCTOR
+    },
+    // Mid top far right (Bottom Right Medical District)
+    {
+      MUSCLER,DOCTOR,PATIENT
+    }
+  },
+  {
+    // Mid bottom far left (Left Factory District)
+    {
+      // Rat, Ruffian, Thug
+      RAT,RUFFIAN,THUG
+    },
+    // Mid bottom center left (Right Factory District)
+    {
+      // Big Rat, Ruffian, Thug
+      BIG_RAT,RUFFIAN,THUG
+    },
+    // Mid bottom center right (Top Left Dock District)
+    {
+      // SEA_RAT, SKIPPER, WATCHER
+      SEA_RAT,SKIPPER,WATCHER
+    },
+    // Mid bottom far right (Top Right Dock District)
+    {
+      // Sea Rat, Sailor, Skipper
+      SEA_RAT,SAILOR,SKIPPER
+    }
+  },
+  {
+    // Bottom far left (Left Sewer District)
+    {
+      // Rat, Scamp, Thug
+      RAT,SCAMP,RUFFIAN
+    },
+    // Bottom center left (Right Sewer District)
+    {
+      // Rat, Scamp, Ruffian
+      RAT,CRAB,SCAMP
+    },
+    // Bottom center right (Bottom Left Dock District)
+    {
+      // Sea rat, Swabbie, Sailor
+      SEA_RAT,SWABBIE,SAILOR
+    },
+    // Bottom far right (Bottom Right Dock District)
+    {
+      // Sea Rat, Sailor, Skipper
+      SEA_RAT,SAILOR,SKIPPER
+    }
+  }
+};
+
+/*const byte enemy_levels[] PROGMEM = {
+1,
+1,
+2,
+4 
+};
+
+const byte enemy_speeds[] PROGMEM = {
+2,
+3,
+2,
+2  
+};
+
+const byte enemy_imgs[] PROGMEM = {
+0,
+1,
+0,
+0,
+1,
+0,
+2
+};*/
 
 //Stats:
 //Level (determines max health + base damage)
@@ -362,7 +451,8 @@ void load_enemy_data(uint8_t index, uint8_t slot){
   //TODO: add support for dungeon spawn tables
 
   //Use dudex and dudey to determine which pool to spawn enemies from
-  const struct enemy* en = &(world_spawns[dudey/8/16][dudex/8/16][index]);
+  uint8_t en_ind = pgm_read_byte(&(world_spawns[dudey/8/16][dudex/8/16][index]));
+  const struct enemy* en = &(enemies[en_ind]);
   enemy_buffer[slot].lvl = pgm_read_byte(&(en->lvl));
   enemy_buffer[slot].spd = pgm_read_byte(&(en->spd));
   enemy_buffer[slot].img = pgm_read_byte(&(en->img));
