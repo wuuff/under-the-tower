@@ -307,6 +307,8 @@ struct character party[3] = {
   {32,320,4,0,0,0,0} // Nurse
 };
 
+uint8_t shadow_stealth_bonus = 0;
+
 //Abilities:
 //Mudlark: Rally, scavenge
 //Nurse: Heal one, heal all
@@ -350,11 +352,11 @@ void try_combat(){
 const char menu_text[][8] PROGMEM = {
   "FLAIL",
   "RALLY",
-  "SCAVNGE",
+  "SEARCH",
   "OTHER",
-  "VANISH",
   "STRIKE",
-  "SPEED",
+  "VANISH", // Perhaps SNEAK or LURK?
+  "HASTE",
   "OTHER",
   "HP ONE",
   "HP ALL",
@@ -376,7 +378,7 @@ const char combat_text[][8] PROGMEM = {
   " XP GET",
   "TRAPPED",
   " SPD UP",
-  " FINDS\n",
+  " FOUND\n",
   "\n GIVE ",
   "TO WHO?"
 };
@@ -532,6 +534,15 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     combat_message[offset++] = amount%100/10+'0';
     combat_message[offset++] = amount%100%10+'0';
     offset = append_to_msg_buffer( 2, combat_text, offset );
+    //If shadow was struck and had an active bonus, remove it and say so
+    if( type == EN2PL  && dest == SHADOW && shadow_stealth_bonus > 0 )
+    {
+      shadow_stealth_bonus = 0;
+      combat_message[offset++] = '\n';
+      combat_message[offset++] = ' ';
+      offset = append_to_msg_buffer( SHADOW, player_names, offset );
+      offset = append_to_msg_buffer( 9, combat_text, offset );
+    }
   }
   combat_message[offset] = '\0';
 }
@@ -618,9 +629,16 @@ void do_combat_step(){
 void do_combat(){
   if( combat_mode == PRECOMBAT ){
     gen_enemies();
-    for(byte i = 0; i < 6; i++){
+    for(uint8_t i = 0; i < 6; i++){
       combat_status[i] = -1;//Reset combat status
+      // Reset party members' temporary bonuses
+      if( i < 3 ){
+        party[i].bonus_speed = 0;
+        party[i].bonus_damage = 0;
+        party[i].bonus_defense = 0;
+      }
     }
+    shadow_stealth_bonus = 0;
     do_combat_step();
   }
   
@@ -716,9 +734,26 @@ void do_combat(){
       combat_selection++;
     }else if(gb.buttons.pressed(BTN_A)){
       gb.sound.playOK();
-      if(menu_selection == MUDLARK_MENU && combat_selection == 0){
+      // Flail, Strike
+      if( (menu_selection == MUDLARK_MENU || menu_selection == SHADOW_MENU) && combat_selection == 0){
         menu_selection = ENEMY_MENU;
         combat_selection = 0;
+      }else if( menu_selection == SHADOW_MENU && combat_selection == 1){
+        //Go into stealth, get damage bonus unless hit
+        shadow_stealth_bonus++;
+        //Say that shadow is sneaking
+        combat_message[append_to_msg_buffer( 5, menu_text, 0 )] = 0;
+        combat_mode = MESSAGE;
+      }else if( menu_selection == NURSE_MENU && combat_selection == 1 ){
+        for( uint8_t i = 0; i < 3; i++ ){
+          party[i].health+=party[i].level;//Heal 10%
+          if( party[i].health > party[i].level*10 ) party[i].health = party[i].level*10;//Cap off healing
+        }
+        combat_message[0] = 'A';
+        combat_message[1] = 'L';
+        combat_message[2] = 'L';
+        combat_message[append_to_msg_buffer( 3, combat_text, 3 )] = 0;
+        combat_mode = MESSAGE;
       }else if( menu_selection == MUDLARK_MENU && combat_selection == 2 ){ //Scavenge
         if( random(100) < 50 ){ //Highest chance to get fruit
           inventory[ITEM_FRUIT]++;
@@ -731,6 +766,10 @@ void do_combat(){
           inventory[chosen]++;
           copy_action_to_msg_buffer(0,0, chosen, PITEM);
         }
+        combat_mode = MESSAGE;
+      }else if( menu_selection == SHADOW_MENU && combat_selection == 2 ){ //Shadow's speed boost
+        party[SHADOW].bonus_speed+=2;//Speed up by 2!
+        copy_action_to_msg_buffer(SHADOW,0,1, PSPEED);
         combat_mode = MESSAGE;
       }else if( (menu_selection >= MUDLARK_MENU && menu_selection <= NURSE_MENU ) && combat_selection == 3 ){
         menu_selection = SECONDARY_MENU;
@@ -754,6 +793,7 @@ void do_combat(){
       }else if( menu_selection == ENEMY_MENU ){
         uint16_t damage = calculate_damage(party[combat_mode].level);// Base damage
         if( combat_mode == MUDLARK ) damage*=2;//Mudlark does double base damage
+        if( combat_mode == SHADOW ) damage*=(shadow_stealth_bonus+1);//Rapidly increase stealth bonus
         if( combat_selection == 1 && enemy_buffer[0].lvl == -1 ){
           combat_selection = 2;//Must be the third one
         }else{
@@ -763,7 +803,7 @@ void do_combat(){
             }
           }
         }
-        copy_action_to_msg_buffer(0,enemy_buffer[combat_selection].nme,damage, PL2EN);
+        copy_action_to_msg_buffer(combat_mode,enemy_buffer[combat_selection].nme,damage, PL2EN);
         if( damage > enemy_health[combat_selection] ){
           enemy_health[combat_selection] = 0;
         }else{
@@ -873,6 +913,7 @@ void do_combat(){
   //If it is an enemy's turn
   else if( combat_mode >= ENEMY1 && combat_mode <= ENEMY3 ){
     uint8_t damage = calculate_damage(enemy_buffer[combat_mode-ENEMY1].lvl);
+    //TODO: Right now this assumes all party members are present!  Fix this!
     uint8_t member = random(3);//Choose which member of the party to attack
     copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, EN2PL);
     if( damage > party[member].health ){
