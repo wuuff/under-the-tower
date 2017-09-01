@@ -280,30 +280,6 @@ const uint8_t world_spawns[4][4][3] PROGMEM = {
   }
 };
 
-/*const byte enemy_levels[] PROGMEM = {
-1,
-1,
-2,
-4 
-};
-
-const byte enemy_speeds[] PROGMEM = {
-2,
-3,
-2,
-2  
-};
-
-const byte enemy_imgs[] PROGMEM = {
-0,
-1,
-0,
-0,
-1,
-0,
-2
-};*/
-
 //Stats:
 //Level (determines max health + base damage)
 //Health
@@ -315,29 +291,21 @@ const char player_names[][8] PROGMEM = {
 "NURSE"
 };
 
-uint8_t mudlark_level = 1;
-uint16_t mudlark_health = 10;
-uint8_t mudlark_speed = 4;
-uint8_t mudlark_xp = 0;
-uint8_t mudlark_bonus_speed = 0;
-uint8_t mudlark_bonus_damage = 0;
-uint8_t mudlark_bonus_defense = 0;
+struct character{
+  uint8_t level;
+  uint16_t health;
+  uint8_t speed;
+  uint8_t xp;
+  uint8_t bonus_speed;
+  uint8_t bonus_damage;
+  uint8_t bonus_defense;
+};
 
-uint8_t shadow_level = 0;
-uint8_t shadow_health = 0;
-uint8_t shadow_speed = 4;
-uint8_t shadow_xp = 0;
-uint8_t shadow_bonus_speed = 0;
-uint8_t shadow_bonus_damage = 0;
-uint8_t shadow_bonus_defense = 0;
-
-uint8_t nurse_level = 0;
-uint8_t nurse_health = 0;
-uint8_t nurse_speed = 4;
-uint8_t nurse_xp = 0;
-uint8_t nurse_bonus_speed = 0;
-uint8_t nurse_bonus_damage = 0;
-uint8_t nurse_bonus_defense = 0;
+struct character party[3] = {
+  {1,10,4,0,0,0,0}, // Mudlark
+  {8,80,3,0,0,0,0}, // Shadow
+  {32,320,4,0,0,0,0} // Nurse
+};
 
 //Abilities:
 //Mudlark: Rally, scavenge
@@ -409,6 +377,8 @@ const char combat_text[][8] PROGMEM = {
   "TRAPPED",
   " SPD UP",
   " FINDS\n",
+  "\n GIVE ",
+  "TO WHO?"
 };
 
 #define MUDLARK_MENU 0
@@ -430,6 +400,7 @@ const char combat_text[][8] PROGMEM = {
 #define ENEMY3 5
 #define MESSAGE 6
 #define VICTORY 7
+#define POSTCOMBAT 8 // Used for allocating xp to allies
 
 char combat_mode = PRECOMBAT;
 byte menu_selection = 0;
@@ -439,7 +410,6 @@ char combat_message[64];//Max of 64 characters in message, which should be plent
 int8_t combat_status[6] = {0,0,0,0,0,0};//Determines who moves next
 uint8_t combat_xp = 0;
 
-//int8_t enemies[3];
 uint8_t enemy_health[3];
 
 uint8_t calculate_damage(uint8_t lvl){
@@ -533,6 +503,11 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     combat_message[offset++] = amount%100/10+'0';
     combat_message[offset++] = amount%100%10+'0';
     offset = append_to_msg_buffer( 6, combat_text, offset );
+    // If we have more than one party member, ask who to give xp to
+    if( party[SHADOW].level != 0 || party[NURSE].level != 0 ){ 
+      offset = append_to_msg_buffer( 10, combat_text, offset );
+      offset = append_to_msg_buffer( 11, combat_text, offset );
+    }
     combat_message[offset] = '\0';
     return;
   }
@@ -569,10 +544,10 @@ void draw_menu(byte index){
     gb.display.cursorY+=6;
     if( combat_selection == i ) gb.display.print(F("\20"));
     gb.display.cursorX = 4;
+    combat_message[0] = '\0';//If we don't copy anything in, print nothing
     if( index <= SECONDARY_MENU ){
       offset = append_to_msg_buffer(index*4+i,menu_text,0);//Ordinary menus with fixed text
     }else if(index == ENEMY_MENU){//Dynamically generated menus with text for allies/enemies
-      combat_message[0] = '\0';//If we don't copy anything in, print nothing
       //Menu for selecting an enemy to attack
       /*
           0 1 2 Result
@@ -595,7 +570,6 @@ void draw_menu(byte index){
         }
       }
     }else if( index == FOOD_MENU || index == DRINK_MENU ){
-      combat_message[0] = '\0';//If we don't copy anything in, print nothing
       uint8_t item = 0;
       uint8_t j = index == FOOD_MENU ? 0 : 3;
       for( ; j < (index == FOOD_MENU ? INVENTORY_SIZE/2: INVENTORY_SIZE); j++ ){
@@ -608,8 +582,10 @@ void draw_menu(byte index){
           break;
         }
       }
-    }else{
-      //TODO: allies menu
+    }else{  //Allies menu (ALLY_MENU)
+      if( i < 3 && party[i].level != 0 ){
+        offset = append_to_msg_buffer(i,player_names,0);
+      }
     }
     combat_message[offset] = '\0';
     gb.display.print(combat_message);
@@ -617,15 +593,20 @@ void draw_menu(byte index){
 }
 
 void do_combat_step(){
-  combat_status[MUDLARK] += mudlark_speed + mudlark_bonus_speed;
-  if( shadow_level > 0 ) combat_status[SHADOW] += shadow_speed;
-  if( nurse_level > 0 ) combat_status[NURSE] += nurse_speed;
-  if( enemy_buffer[0].lvl != -1 ) combat_status[ENEMY1] += enemy_buffer[0].spd;
-  if( enemy_buffer[1].lvl != -1 ) combat_status[ENEMY2] += enemy_buffer[1].spd;
-  if( enemy_buffer[2].lvl != -1 ) combat_status[ENEMY3] += enemy_buffer[2].spd;
+  uint8_t i;
+  for( i = 0; i < 3; i++ ){
+    // If a party member is present, add their speed
+    if( party[i].level != 0 ){
+      combat_status[i] += party[i].speed + party[i].bonus_speed;
+    }
+    // If an enemy is present, add their speed
+    if( enemy_buffer[i].lvl != -1 ){
+      combat_status[i+ENEMY1] += enemy_buffer[i].spd;
+    }
+  }
 
   uint8_t maxi = 0;
-  for(uint8_t i = 0; i < 6; i++){
+  for(i = 0; i < 6; i++){
     if( combat_status[i] > combat_status[maxi] ) maxi = i;
   }
   combat_mode = maxi;
@@ -675,8 +656,8 @@ void do_combat(){
         byte step_forward = 1;
         gb.sound.playTick();
         if( combat_mode == VICTORY ){
-          combat_mode = PRECOMBAT;
-          mode = WORLD;
+          combat_mode = POSTCOMBAT;
+          menu_selection = ALLY_MENU;
           return;
         }
         //First check if all enemies have died
@@ -684,13 +665,6 @@ void do_combat(){
           step_forward = 0;
           combat_mode = VICTORY;
           copy_action_to_msg_buffer(0,0,combat_xp, PWIN);
-          //Give mudlark xp (TODO: give other characters xp)
-          mudlark_xp+=combat_xp;
-          if( mudlark_xp >= mudlark_level*2 ){
-            mudlark_xp -= (mudlark_level*2);// Keep previous xp
-            mudlark_health += ((mudlark_level+1)*10)-(mudlark_level*10);// Give enough health that a full-health mudlark stays at full health
-            mudlark_level++;//Level up!
-          }
         }
         //Second do a check whether anyone has died
         for( byte i = 0; i < 3; i++ ){
@@ -707,30 +681,30 @@ void do_combat(){
      }
   }
 
-  //If it is the player's turn
-  else if( combat_mode == MUDLARK ){
+  //If it is the player's turn (one of 3 party members or post-combat xp allocation)
+  else if( (combat_mode >= MUDLARK && combat_mode <= NURSE) || combat_mode == POSTCOMBAT ){
 
-    gb.display.drawRect(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+1, SCREEN_WIDTH/2-2, 3);
-    gb.display.drawLine(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+2, SCREEN_WIDTH/2+((SCREEN_WIDTH/2-4)*mudlark_health)/(mudlark_level*10), SCREEN_HEIGHT/2+2);
-    
-    gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
-    gb.display.cursorY = SCREEN_HEIGHT/2+6;
-    gb.display.print(F("MUDLARK"));
-    gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
-    gb.display.cursorY = SCREEN_HEIGHT/2+12;
-    gb.display.print(mudlark_health);
-    gb.display.print(F("/"));
-    gb.display.print(mudlark_level*10);
-
-    //DEBUG
-    //gb.display.print(F(" S"));
-    //gb.display.print(mudlark_speed);
-    gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
-    gb.display.cursorY = SCREEN_HEIGHT/2+18;
-    gb.display.print(F("XP"));
-    gb.display.print(mudlark_xp);
-    gb.display.print(F("L"));
-    gb.display.print(mudlark_level);
+    if( combat_mode >= MUDLARK && combat_mode <= NURSE ){
+      gb.display.drawRect(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+1, SCREEN_WIDTH/2-2, 3);
+      gb.display.drawLine(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+2, SCREEN_WIDTH/2+((SCREEN_WIDTH/2-4)*party[combat_mode].health)/(party[combat_mode].level*10), SCREEN_HEIGHT/2+2);
+      
+      gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
+      gb.display.cursorY = SCREEN_HEIGHT/2+6;
+      copy_to_buffer(combat_mode,player_names);
+      gb.display.print(combat_buffer);
+      gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
+      gb.display.cursorY = SCREEN_HEIGHT/2+12;
+      gb.display.print(party[combat_mode].health);
+      gb.display.print(F("/"));
+      gb.display.print(party[combat_mode].level*10);
+  
+      gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
+      gb.display.cursorY = SCREEN_HEIGHT/2+18;
+      gb.display.print(F("XP"));
+      gb.display.print(party[combat_mode].xp);
+      gb.display.print(F("L"));
+      gb.display.print(party[combat_mode].level);
+    }
 
     draw_menu(menu_selection);
     
@@ -758,7 +732,7 @@ void do_combat(){
           copy_action_to_msg_buffer(0,0, chosen, PITEM);
         }
         combat_mode = MESSAGE;
-      }else if( menu_selection == MUDLARK_MENU && combat_selection == 3 ){
+      }else if( (menu_selection >= MUDLARK_MENU && menu_selection <= NURSE_MENU ) && combat_selection == 3 ){
         menu_selection = SECONDARY_MENU;
         combat_selection = 0;
       }else if( menu_selection == SECONDARY_MENU ){
@@ -778,7 +752,8 @@ void do_combat(){
           }
         }
       }else if( menu_selection == ENEMY_MENU ){
-        uint8_t damage = calculate_damage(mudlark_level)*2;//Mudlark does double base damage
+        uint16_t damage = calculate_damage(party[combat_mode].level);// Base damage
+        if( combat_mode == MUDLARK ) damage*=2;//Mudlark does double base damage
         if( combat_selection == 1 && enemy_buffer[0].lvl == -1 ){
           combat_selection = 2;//Must be the third one
         }else{
@@ -795,6 +770,25 @@ void do_combat(){
           enemy_health[combat_selection]-=damage;
         }
         combat_mode = MESSAGE;
+      }else if( menu_selection == ALLY_MENU ){
+        //Assume mudlark is always slot 0, shadow is always slot 1, and nurse is always slot 2
+        //TODO: This assumption will cause problems if we change in the future to have, say, the nurse
+        //but not the shadow in the party.
+        // Check if this is post-combat xp allocation or nurse ability
+        if( combat_mode == POSTCOMBAT ){
+          //Give xp to chosen character
+          party[combat_selection].xp+=combat_xp;
+          if( party[combat_selection].xp >= party[combat_selection].level*2 ){
+            party[combat_selection].xp -= (party[combat_selection].level*2);// Keep previous xp
+            party[combat_selection].health += ((party[combat_selection].level+1)*10)-(party[combat_selection].level*10);// Give enough health that full health stays at full health
+            party[combat_selection].level++;//Level up!
+          }
+          combat_mode = PRECOMBAT;
+          mode = WORLD;
+          return;
+        }else{
+          //TODO: NURSE HEAL ONE ability
+        }
       }else if( menu_selection == FOOD_MENU || menu_selection == DRINK_MENU ){
         uint8_t item = 0;
         for( uint8_t i = 0; i < INVENTORY_SIZE/2; i++ ){
@@ -805,23 +799,23 @@ void do_combat(){
           }
         }
         if( item == ITEM_FRUIT ){
-          mudlark_health+=mudlark_level;//Heal 10%
+          party[combat_mode].health+=party[combat_mode].level;//Heal 10%
           inventory[item]--;
-          copy_action_to_msg_buffer(0,0,mudlark_level, PHEAL);
+          copy_action_to_msg_buffer(combat_mode,0,party[combat_mode].level, PHEAL);
         }else if( item == ITEM_BREAD ){
-          mudlark_health+=mudlark_level*3/2;//Heal 15%
+          party[combat_mode].health+=party[combat_mode].level*3/2;//Heal 15%
           inventory[item]--;
-          copy_action_to_msg_buffer(0,0,mudlark_level*3/2, PHEAL);
+          copy_action_to_msg_buffer(combat_mode,0,party[combat_mode].level*3/2, PHEAL);
         }else if( item == ITEM_TONIC ){
-          mudlark_health+=(mudlark_level*10/2);//Heal 50%
+          party[combat_mode].health+=(party[combat_mode].level*10/2);//Heal 50%
           inventory[item]--;
-          copy_action_to_msg_buffer(0,0,(mudlark_level*10/2), PHEAL);
+          copy_action_to_msg_buffer(combat_mode,0,(party[combat_mode].level*10/2), PHEAL);
         }else if( item == ITEM_TEA ){
-          mudlark_bonus_speed++;//Speed up
+          party[combat_mode].bonus_speed++;//Speed up
           inventory[item]--;
-          copy_action_to_msg_buffer(0,0,1, PSPEED);
+          copy_action_to_msg_buffer(combat_mode,0,1, PSPEED);
         }
-        if( mudlark_health > mudlark_level*10 ) mudlark_health = mudlark_level*10;//Cap off healing
+        if( party[combat_mode].health > party[combat_mode].level*10 ) party[combat_mode].health = party[combat_mode].level*10;//Cap off healing
         combat_mode = MESSAGE;
       }
     }else if(gb.buttons.pressed(BTN_B)){
@@ -840,7 +834,10 @@ void do_combat(){
 
 
       if( menu_selection == ENEMY_MENU || menu_selection == SECONDARY_MENU ){
-        menu_selection = MUDLARK_MENU;
+        //since the combat mode and menu selection values line up for the party
+        //members, we can do this to switch back to the right primary menu
+        //depending on which party member's turn it is
+        menu_selection = combat_mode; 
         combat_selection = 0;
       }else if( menu_selection == FOOD_MENU || menu_selection == DRINK_MENU ){
         menu_selection = SECONDARY_MENU;
@@ -855,6 +852,12 @@ void do_combat(){
           mod--;
         }
       }
+    }else if( menu_selection == ENEMY_MENU ){
+      //Determine how many party members there are so we can
+      //wrap the selection cursor around
+      mod = 1;
+      if( party[SHADOW].level != 0 ) mod++;
+      if( party[NURSE].level != 0 ) mod++;
     }else if( menu_selection == SECONDARY_MENU ){
       mod = 3;
     }else if( menu_selection == FOOD_MENU || menu_selection == DRINK_MENU ){
@@ -867,28 +870,17 @@ void do_combat(){
     combat_selection%=mod;
   }
 
-  else if( combat_mode == SHADOW ){
-    gb.display.cursorX = SCREEN_WIDTH-29;//7*4+1
-    gb.display.cursorY = SCREEN_HEIGHT/2+6;
-    gb.display.print(F("SHADOW?"));
-    gb.display.cursorX = SCREEN_WIDTH-29;//7*4+1
-    gb.display.cursorY = SCREEN_HEIGHT/2+12;
-    gb.display.print(shadow_level);
-  }
-
   //If it is an enemy's turn
   else if( combat_mode >= ENEMY1 && combat_mode <= ENEMY3 ){
-    //if(gb.buttons.pressed(BTN_A)){
-    //For now only target Mudlark.  TODO: random targeting
     uint8_t damage = calculate_damage(enemy_buffer[combat_mode-ENEMY1].lvl);
-    copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,0,damage, EN2PL);
-    if( damage > mudlark_health ){
-      mudlark_health = 0;
+    uint8_t member = random(3);//Choose which member of the party to attack
+    copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, EN2PL);
+    if( damage > party[member].health ){
+      party[member].health = 0; // TODO: loss conditions
     }else{
-      mudlark_health-=damage;
+      party[member].health-=damage;
     }
     combat_mode = MESSAGE;
-    //}
   }
 
   //DEBUG TODO: remove
