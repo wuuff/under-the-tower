@@ -308,6 +308,7 @@ struct character party[3] = {
 };
 
 uint8_t shadow_stealth_bonus = 0;
+int8_t nurse_protect_bonus = -1;// -1 means she is not protecting anyone
 
 //Abilities:
 //Mudlark: Rally, scavenge
@@ -380,7 +381,8 @@ const char combat_text[][8] PROGMEM = {
   " SPD UP",
   " FOUND\n",
   "\n GIVE ",
-  "TO WHO?"
+  "TO WHO?",
+  "PROTECT"
 };
 
 #define MUDLARK_MENU 0
@@ -484,15 +486,27 @@ uint8_t append_to_msg_buffer(uint8_t index, const char arr[][8], uint8_t offset)
 #define PHEAL 4
 #define PSPEED 5
 #define PITEM 6
+#define PROTECT 7
 
 //TODO: space optimize this
 void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uint8_t type){
   uint8_t offset = 0;
   if( type == PL2EN || type == PHEAL || type == PSPEED || type == PITEM )
     offset = append_to_msg_buffer( source, player_names, offset );
-  else if( type == EN2PL )
+  else if( type == EN2PL || type == PROTECT ){
+    if( type == PROTECT ){
+      //NURSE PROTECT <PARTY MEMBER>
+      //offset = append_to_msg_buffer( NURSE, player_names, offset );
+      //combat_message[offset++] = ' ';
+      offset = append_to_msg_buffer( 12, combat_text, offset );
+      combat_message[offset++] = ' ';
+      offset = append_to_msg_buffer( dest, player_names, offset );
+      combat_message[offset++] = '\n';
+      combat_message[offset++] = ' ';
+      dest = NURSE;// Nurse takes the damage instead
+    }
     offset = append_to_msg_buffer( source, enemy_names, offset );
-  else if( type == EFALL ){
+  }else if( type == EFALL ){
     offset = append_to_msg_buffer( source, enemy_names, offset );
     offset = append_to_msg_buffer( 4, combat_text, offset );
     combat_message[offset] = '\0';
@@ -526,7 +540,7 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
   }
   if( type == PL2EN )
     offset = append_to_msg_buffer( dest, enemy_names, offset );
-  else if( type == EN2PL )
+  else if( type == EN2PL || type == PROTECT )
     offset = append_to_msg_buffer( dest, player_names, offset );
   if( type != PSPEED && type != PITEM ){
     offset = append_to_msg_buffer( 1, combat_text, offset );
@@ -535,7 +549,7 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     combat_message[offset++] = amount%100%10+'0';
     offset = append_to_msg_buffer( 2, combat_text, offset );
     //If shadow was struck and had an active bonus, remove it and say so
-    if( type == EN2PL  && dest == SHADOW && shadow_stealth_bonus > 0 )
+    if( type == EN2PL && dest == SHADOW && shadow_stealth_bonus > 0 )
     {
       shadow_stealth_bonus = 0;
       combat_message[offset++] = '\n';
@@ -620,6 +634,8 @@ void do_combat_step(){
   for(i = 0; i < 6; i++){
     if( combat_status[i] > combat_status[maxi] ) maxi = i;
   }
+  //If nurse was protecting anyone, reset this as her turn starts.
+  if( maxi == NURSE ) nurse_protect_bonus = -1;
   combat_mode = maxi;
   combat_selection = 0;//Force the first item to be selected by default
   menu_selection = maxi;//Only relevant for player characters?
@@ -639,6 +655,7 @@ void do_combat(){
       }
     }
     shadow_stealth_bonus = 0;
+    nurse_protect_bonus = -1;
     do_combat_step();
   }
   
@@ -738,6 +755,12 @@ void do_combat(){
       if( (menu_selection == MUDLARK_MENU || menu_selection == SHADOW_MENU) && combat_selection == 0){
         menu_selection = ENEMY_MENU;
         combat_selection = 0;
+      }else if( menu_selection == NURSE_MENU && combat_selection == 0){
+        //Nurse's HEAL ONE ability
+        //Signal that we are going to heal, not protect, by resetting bonus (in case player entered protect menu and then cancelled)
+        nurse_protect_bonus = -1;
+        menu_selection = ALLY_MENU;
+        combat_selection = 0;
       }else if( menu_selection == SHADOW_MENU && combat_selection == 1){
         //Go into stealth, get damage bonus unless hit
         shadow_stealth_bonus++;
@@ -771,6 +794,10 @@ void do_combat(){
         party[SHADOW].bonus_speed+=2;//Speed up by 2!
         copy_action_to_msg_buffer(SHADOW,0,1, PSPEED);
         combat_mode = MESSAGE;
+      }else if( menu_selection == NURSE_MENU && combat_selection == 2 ){ //Nurse's protect
+        nurse_protect_bonus = 4;// Signal that we are going to protect, not heal
+        menu_selection = ALLY_MENU;
+        combat_selection = 0;
       }else if( (menu_selection >= MUDLARK_MENU && menu_selection <= NURSE_MENU ) && combat_selection == 3 ){
         menu_selection = SECONDARY_MENU;
         combat_selection = 0;
@@ -826,8 +853,25 @@ void do_combat(){
           combat_mode = PRECOMBAT;
           mode = WORLD;
           return;
-        }else{
-          //TODO: NURSE HEAL ONE ability
+        }else if( nurse_protect_bonus == -1 ){ // If we are not trying to select who to protect, and instead heal
+          //Nurse's HEAL ONE ability
+          //Remember, this assumes that we are not missing a character---if I add the ability to 
+          //revive fallen party members (vs an instant game over) then this will need to change...
+          party[combat_selection].health += 2*party[combat_selection].level; // Heal 20%
+          if( party[combat_selection].health > party[combat_selection].level*10 ){
+            //Cap off health
+            party[combat_selection].health = party[combat_selection].level*10;
+          }
+          copy_action_to_msg_buffer(combat_selection,0,2*party[combat_selection].level, PHEAL);
+          combat_mode = MESSAGE;
+        }else{ // Protect selected party member
+          nurse_protect_bonus = combat_selection;
+          uint8_t offset;
+          offset = append_to_msg_buffer( 12, combat_text, 0 );
+          combat_message[offset++] = ' ';
+          offset = append_to_msg_buffer( combat_selection, player_names, offset );
+          combat_message[offset++] = '\0';
+          combat_mode = MESSAGE;
         }
       }else if( menu_selection == FOOD_MENU || menu_selection == DRINK_MENU ){
         uint8_t item = 0;
@@ -915,7 +959,15 @@ void do_combat(){
     uint8_t damage = calculate_damage(enemy_buffer[combat_mode-ENEMY1].lvl);
     //TODO: Right now this assumes all party members are present!  Fix this!
     uint8_t member = random(3);//Choose which member of the party to attack
-    copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, EN2PL);
+    if( nurse_protect_bonus == member ){
+      //Damage is reduced by 10% of nurse's level if nurse protects
+      damage = party[NURSE].level > damage ? 0 : damage - party[NURSE].level;
+      copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, PROTECT);
+      member = NURSE; //Nurse takes damage instead
+    }else{
+      copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, EN2PL);
+    }
+    
     if( damage > party[member].health ){
       party[member].health = 0; // TODO: loss conditions
     }else{
