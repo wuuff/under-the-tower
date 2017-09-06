@@ -336,7 +336,7 @@ const char item_names[][8] PROGMEM = {
 
 #define INVENTORY_SIZE 6
 
-unsigned char inventory[6] = {2,1,0,1,16,0};//Each element == how much of each item
+unsigned char inventory[6] = {2,1,16,1,16,16};//Each element == how much of each item
 
 uint8_t next_combat = 10;
 
@@ -382,7 +382,9 @@ const char combat_text[][8] PROGMEM = {
   " FOUND\n",
   "\n GIVE ",
   "TO WHO?",
-  "PROTECT"
+  "PROTECT",
+  " DMG UP",
+  " DEF UP"
 };
 
 #define MUDLARK_MENU 0
@@ -487,11 +489,13 @@ uint8_t append_to_msg_buffer(uint8_t index, const char arr[][8], uint8_t offset)
 #define PSPEED 5
 #define PITEM 6
 #define PROTECT 7
+#define PDAMAGE 8
+#define PDEFENSE 9
 
 //TODO: space optimize this
 void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uint8_t type){
   uint8_t offset = 0;
-  if( type == PL2EN || type == PHEAL || type == PSPEED || type == PITEM )
+  if( type == PL2EN || type == PHEAL || type == PSPEED || type == PITEM || type == PDAMAGE || type == PDEFENSE )
     offset = append_to_msg_buffer( source, player_names, offset );
   else if( type == EN2PL || type == PROTECT ){
     if( type == PROTECT ){
@@ -531,6 +535,10 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     offset = append_to_msg_buffer( 3, combat_text, offset );
   }else if( type == PSPEED ){
     offset = append_to_msg_buffer( 8, combat_text, offset );
+  }else if( type == PDAMAGE ){
+    offset = append_to_msg_buffer( 13, combat_text, offset );
+  }else if( type == PDEFENSE ){
+    offset = append_to_msg_buffer( 14, combat_text, offset );
   }else if( type == PITEM ){
     offset = append_to_msg_buffer( 9, combat_text, offset );
     combat_message[offset++] = ' ';
@@ -542,7 +550,7 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     offset = append_to_msg_buffer( dest, enemy_names, offset );
   else if( type == EN2PL || type == PROTECT )
     offset = append_to_msg_buffer( dest, player_names, offset );
-  if( type != PSPEED && type != PITEM ){
+  if( type != PSPEED && type != PDAMAGE && type != PDEFENSE && type != PITEM ){
     offset = append_to_msg_buffer( 1, combat_text, offset );
     combat_message[offset++] = amount/100+'0';
     combat_message[offset++] = amount%100/10+'0';
@@ -768,14 +776,19 @@ void do_combat(){
         combat_message[append_to_msg_buffer( 5, menu_text, 0 )] = 0;
         combat_mode = MESSAGE;
       }else if( menu_selection == NURSE_MENU && combat_selection == 1 ){
+        uint16_t healing = party[NURSE].level; // Heal 10% of NURSE's health for everyone
+        // Heal an extra amount by (5% of original healing + 1) * bonus_damage
+        // Therefore, the nurse's damage bonus is used for healing since she has no attack. 
+        healing += (healing/10/2 + 1)*party[NURSE].bonus_damage;
         for( uint8_t i = 0; i < 3; i++ ){
-          party[i].health+=party[i].level;//Heal 10%
+          party[i].health+=healing;
           if( party[i].health > party[i].level*10 ) party[i].health = party[i].level*10;//Cap off healing
         }
         combat_message[0] = 'A';
         combat_message[1] = 'L';
         combat_message[2] = 'L';
         combat_message[append_to_msg_buffer( 3, combat_text, 3 )] = 0;
+        // TODO: Display how much all heal by, now that the heal amount is unified by the nurse's level
         combat_mode = MESSAGE;
       }else if( menu_selection == MUDLARK_MENU && combat_selection == 2 ){ //Scavenge
         if( random(100) < 50 ){ //Highest chance to get fruit
@@ -821,6 +834,8 @@ void do_combat(){
         uint16_t damage = calculate_damage(party[combat_mode].level);// Base damage
         if( combat_mode == MUDLARK ) damage*=2;//Mudlark does double base damage
         if( combat_mode == SHADOW ) damage*=(shadow_stealth_bonus+1);//Rapidly increase stealth bonus
+        // Increase damage by (5% of original damage + 1) * bonus_damage
+        damage += (damage/10/2 + 1)*party[combat_mode].bonus_damage;
         if( combat_selection == 1 && enemy_buffer[0].lvl == -1 ){
           combat_selection = 2;//Must be the third one
         }else{
@@ -857,12 +872,16 @@ void do_combat(){
           //Nurse's HEAL ONE ability
           //Remember, this assumes that we are not missing a character---if I add the ability to 
           //revive fallen party members (vs an instant game over) then this will need to change...
-          party[combat_selection].health += 2*party[combat_selection].level; // Heal 20%
+          uint16_t healing = 2*party[NURSE].level;// Heal 20% of NURSE's health
+          // Heal an extra amount by (5% of original healing + 1) * bonus_damage
+          // Therefore, the nurse's damage bonus is used for healing since she has no attack. 
+          healing += (healing/10/2 + 1)*party[NURSE].bonus_damage;
+          party[combat_selection].health += healing;
           if( party[combat_selection].health > party[combat_selection].level*10 ){
             //Cap off health
             party[combat_selection].health = party[combat_selection].level*10;
           }
-          copy_action_to_msg_buffer(combat_selection,0,2*party[combat_selection].level, PHEAL);
+          copy_action_to_msg_buffer(combat_selection,0,healing, PHEAL);
           combat_mode = MESSAGE;
         }else{ // Protect selected party member
           nurse_protect_bonus = combat_selection;
@@ -890,6 +909,10 @@ void do_combat(){
           party[combat_mode].health+=party[combat_mode].level*3/2;//Heal 15%
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,party[combat_mode].level*3/2, PHEAL);
+        }else if( item == ITEM_MEAT ){
+          party[combat_mode].bonus_damage++; // Meat increases damage
+          inventory[item]--;
+          copy_action_to_msg_buffer(combat_mode,0,1, PDAMAGE);
         }else if( item == ITEM_TONIC ){
           party[combat_mode].health+=(party[combat_mode].level*10/2);//Heal 50%
           inventory[item]--;
@@ -898,6 +921,10 @@ void do_combat(){
           party[combat_mode].bonus_speed++;//Speed up
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,1, PSPEED);
+        }else if( item == ITEM_LIQUOR ){
+          party[combat_mode].bonus_defense++;// Liquor increases damage resistance
+          inventory[item]--;
+          copy_action_to_msg_buffer(combat_mode,0,1, PDEFENSE);
         }
         if( party[combat_mode].health > party[combat_mode].level*10 ) party[combat_mode].health = party[combat_mode].level*10;//Cap off healing
         combat_mode = MESSAGE;
@@ -956,15 +983,21 @@ void do_combat(){
 
   //If it is an enemy's turn
   else if( combat_mode >= ENEMY1 && combat_mode <= ENEMY3 ){
-    uint8_t damage = calculate_damage(enemy_buffer[combat_mode-ENEMY1].lvl);
+    int16_t damage = calculate_damage(enemy_buffer[combat_mode-ENEMY1].lvl);
     //TODO: Right now this assumes all party members are present!  Fix this!
     uint8_t member = random(3);//Choose which member of the party to attack
     if( nurse_protect_bonus == member ){
       //Damage is reduced by 10% of nurse's level if nurse protects
       damage = party[NURSE].level > damage ? 0 : damage - party[NURSE].level;
+      // Reduce damage by an extra amount of (5% of reduced damage + 1) * bonus_defense 
+      damage -= (damage/10/2 + 1)*party[NURSE].bonus_defense;
+      if( damage < 0 ) damage = 0;
       copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, PROTECT);
       member = NURSE; //Nurse takes damage instead
     }else{
+      // Reduce damage by (5% of original damage + 1) * bonus_defense 
+      damage -= (damage/10/2 + 1)*party[member].bonus_defense;
+      if( damage < 0 ) damage = 0;
       copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, EN2PL);
     }
     
