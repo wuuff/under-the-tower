@@ -384,7 +384,8 @@ const char combat_text[][8] PROGMEM = {
   "TO WHO?",
   "PROTECT",
   " DMG UP",
-  " DEF UP"
+  " DEF UP",
+  "ALL"
 };
 
 #define MUDLARK_MENU 0
@@ -491,6 +492,7 @@ uint8_t append_to_msg_buffer(uint8_t index, const char arr[][8], uint8_t offset)
 #define PROTECT 7
 #define PDAMAGE 8
 #define PDEFENSE 9
+#define HEALALL 10
 
 //TODO: space optimize this
 void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uint8_t type){
@@ -530,8 +532,10 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     }
     combat_message[offset] = '\0';
     return;
+  }else if( type == HEALALL ){
+    offset = append_to_msg_buffer( 15, combat_text, offset );
   }
-  if( type == PHEAL ){
+  if( type == PHEAL || type == HEALALL ){
     offset = append_to_msg_buffer( 3, combat_text, offset );
   }else if( type == PSPEED ){
     offset = append_to_msg_buffer( 8, combat_text, offset );
@@ -769,6 +773,10 @@ void do_combat(){
         nurse_protect_bonus = -1;
         menu_selection = ALLY_MENU;
         combat_selection = 0;
+      }else if( menu_selection == MUDLARK_MENU && combat_selection == 1){
+        //Mudlark's RALLY ability; select an ally to boost damage of
+        menu_selection = ALLY_MENU;
+        combat_selection = 0;
       }else if( menu_selection == SHADOW_MENU && combat_selection == 1){
         //Go into stealth, get damage bonus unless hit
         shadow_stealth_bonus++;
@@ -784,10 +792,7 @@ void do_combat(){
           party[i].health+=healing;
           if( party[i].health > party[i].level*10 ) party[i].health = party[i].level*10;//Cap off healing
         }
-        combat_message[0] = 'A';
-        combat_message[1] = 'L';
-        combat_message[2] = 'L';
-        combat_message[append_to_msg_buffer( 3, combat_text, 3 )] = 0;
+        copy_action_to_msg_buffer(0,0,healing, HEALALL);
         // TODO: Display how much all heal by, now that the heal amount is unified by the nurse's level
         combat_mode = MESSAGE;
       }else if( menu_selection == MUDLARK_MENU && combat_selection == 2 ){ //Scavenge
@@ -868,6 +873,10 @@ void do_combat(){
           combat_mode = PRECOMBAT;
           mode = WORLD;
           return;
+        }else if( combat_status[MUDLARK] == 0 ){ // If it is the mudlark's turn
+          party[combat_selection].bonus_damage++;
+          copy_action_to_msg_buffer(combat_selection,0,1, PDAMAGE);
+          combat_mode = MESSAGE;
         }else if( nurse_protect_bonus == -1 ){ // If we are not trying to select who to protect, and instead heal
           //Nurse's HEAL ONE ability
           //Remember, this assumes that we are not missing a character---if I add the ability to 
