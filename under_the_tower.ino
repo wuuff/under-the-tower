@@ -5,59 +5,6 @@
 #include <Gamebuino.h>
 Gamebuino gb;
 
-const char dialogue[][16] PROGMEM = {
-//"123456789012345",
-"THIS CITY IS",
-"\n DYING",
-"GATES SEALED",
-"\n DUE TO",
-"\n PLAGUE",
-"ITS RULERS SAFE",
-"\n HIGH ABOVE IN",
-"\n THE TOWER",
-"WHILE THE POOR",
-"\n DIE BELOW",
-"ON MUD FLATS",
-"\n BY THE RIVER",
-"\n THEY SCAVENGE",
-"THEY ARE KNOWN",
-"\n AS MUDLARKS",
-"THIS IS ABOUT",
-"\n ONE OF THESE",
-"\n THAT LIVES",
-"UNDER THE TOWER",
-
-"I HAVE OBSERVED",
-"\n FROM AFAR",
-"\n YOUR SKILL",
-"I HAVE A TASK",
-"\n THAT WILL PAY",
-"\n A HUNDREDFOLD",
-"BUT FIRST YOU",
-"\n MUST PROVE I",
-"\n CHOSE WISELY",
-"SEEK THE CATPAW",
-"\n A PLACE OF",
-"\n DECADENCE",
-"A GIRL IS HELD",
-"\n BOUND WITHIN",
-"FREE HER AND",
-"\n BRING HER TO",
-"\n HER FATHER",
-
-"YOUR KIND IS",
-"\n NOT ALLOWED",
-"\n IN THE CATPAW",
-
-"YOU LOOK YOUNG",
-"\n TO BE A",
-"\n CUSTOMER HERE",
-
-"A KID LIKE YOU",
-"\n IS TOO YOUNG",
-"\n TO BE HERE"
-};
-
 #define SCREEN_WIDTH 84
 #define SCREEN_HEIGHT 48
 
@@ -78,12 +25,13 @@ void setup() {
 #define WORLD 0
 #define COMBAT 1
 #define DUNGEON 2
+#define DIALOGUE 3
 //Transitions to world or dungeon modes
-#define TO_WORLD 3
-#define TO_COMBAT 4
-#define TO_DUNGEON 5
+#define TO_WORLD 4
+#define TO_COMBAT 5
+#define TO_DUNGEON 6
 
-#define TRANSITION_DIFF 3
+#define TRANSITION_DIFF 4
 
 byte mode = WORLD;
 
@@ -117,6 +65,9 @@ void loop() {
         if( transition >= 0 ){
           draw_world();
           step_world();
+          if( dudex < 24*8 ){
+            mode = DIALOGUE;
+          }
         }
         break;
       case TO_DUNGEON:
@@ -128,7 +79,7 @@ void loop() {
         }
         break;
       case TO_COMBAT:
-      if( transition >= 0 ){
+        if( transition >= 0 ){
           do_combat();//Draw first to avoid the text overdrawing the transition
         }
         step_transition();
@@ -138,6 +89,9 @@ void loop() {
           do_combat();
         }
         break;
+      case DIALOGUE:
+        draw_world();
+        step_dialogue();
     }
 
     if(gb.buttons.pressed(BTN_C)){
