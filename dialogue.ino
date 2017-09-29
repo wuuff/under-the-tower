@@ -73,6 +73,9 @@ void fill_dialogue_buffer(uint8_t index){
   }
 }
 
+uint8_t dialogue_index;
+uint8_t dialogue_remaining;
+
 void step_dialogue(){
   worldframe++;
   worldframe%=8;
@@ -83,7 +86,22 @@ void step_dialogue(){
   
   gb.display.cursorX = 4;
   gb.display.cursorY = SCREEN_HEIGHT/2;
-  fill_dialogue_buffer(10);
+  fill_dialogue_buffer(dialogue_index);
   gb.display.print(combat_message);
+
+  if(gb.buttons.pressed(BTN_A)){
+    gb.sound.playOK();
+    if( dialogue_remaining == 0 ){
+      // If dialogue is done, return to world mode
+      mode = WORLD;
+    }else{
+      // If dialogue is not done, move to next chunk of text
+      dialogue_remaining--;
+      //Skip lines until we reach one that has no newline
+      do{
+        dialogue_index++;
+      }while( '\n' == pgm_read_byte(((byte*)&dialogue[dialogue_index])) );
+    }
+  }
 }
 

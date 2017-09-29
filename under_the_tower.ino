@@ -2,6 +2,8 @@
 //Use for PROGMEM
 #include <avr/pgmspace.h>
 #include "overworld.h"
+#include "save.h"
+#include "dialogue.h"
 #include <Gamebuino.h>
 Gamebuino gb;
 
@@ -65,7 +67,10 @@ void loop() {
         if( transition >= 0 ){
           draw_world();
           step_world();
-          if( dudex < 24*8 ){
+          if( game_status[STATUS_SHADOW1] == 0 && dudex < 24*8 ){
+            game_status[STATUS_SHADOW1] = 1;
+            dialogue_index = 19;
+            dialogue_remaining = 5;
             mode = DIALOGUE;
           }
         }
