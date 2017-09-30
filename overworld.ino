@@ -697,8 +697,8 @@ const byte world[] PROGMEM = {
 17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,
 };
 
-uint16_t dudex = 25*8;//8*8;//25*8;
-uint16_t dudey = 57*8;//27*8;//57*8;
+uint16_t dudex = 37*8;//25*8;//8*8;//25*8;
+uint16_t dudey = 49*8;//57*8;//27*8;//57*8;
 
 byte dudeanimation = DOWN;
 byte dudeframe = 0;
@@ -783,10 +783,10 @@ void step_world(){
       uint8_t dungeonx,dungeony;
       if( collision == DOOR ){
         dungeonx = dudex/8;
-        dungeony = (dudey-1/8);
+        dungeony = ((dudey-1)/8);
       }else{
         dungeonx = dudex+7/8;
-        dungeony = (dudey-1/8);
+        dungeony = ((dudey-1)/8);
       }
       // Identify the dungeon we are entering
       for( uint8_t i = 0; i < NUM_DUNGEONS; i++ ){

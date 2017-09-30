@@ -11,7 +11,7 @@ struct dungeon{
   uint8_t exit;
 };
 
-#define NUM_DUNGEONS 5
+#define NUM_DUNGEONS 18
 extern const struct dungeon dungeons[];
 
 #define NUM_DUN_TILES 5
