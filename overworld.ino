@@ -785,7 +785,7 @@ void step_world(){
         dungeonx = dudex/8;
         dungeony = ((dudey-1)/8);
       }else{
-        dungeonx = dudex+7/8;
+        dungeonx = (dudex+7)/8;
         dungeony = ((dudey-1)/8);
       }
       // Identify the dungeon we are entering
