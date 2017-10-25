@@ -2,6 +2,10 @@
 //Ruffian: Level 2
 //Scoundrel: Level 4
 //Thief (or maybe Shadow) recruits you on his quest
+#include "battle.h"
+#include "dungeon.h"
+
+uint8_t meta_mode = WORLD; //Mode that we came from, either WORLD or DUNGEON
 
 struct enemy{
   int8_t lvl;
@@ -12,39 +16,7 @@ struct enemy{
 
 struct enemy enemy_buffer[3];//Store data for enemies to battle
 
-#define RAT 0
-#define SCAMP 1
-#define RUFFIAN 2
-#define THUG 3
-#define BIG_RAT 4
-#define PATRON 5
-#define BOUNCER 6
-#define SLAVER 7
-#define SEA_RAT 8
-#define SWABBIE 9
-#define SAILOR 10
-#define SKIPPER 11
-#define CAPTAIN 12
-#define BAD_RAT 13
-#define WATCHER 14
-#define BRUISER 15
-#define MUSCLER 16
-#define OVERMAN 17
-#define DOCTOR 18
-#define PATIENT 19
-#define SUBJECT 20
-#define MUTANT 21
-#define MADMAN 22
-#define WOW_RAT 23
-#define SNOB 24
-#define RICHMAN 25
-#define MAX_RAT 26
-#define GUARD 27
-#define GOLEM 28
-#define OFFICER 29
-#define LEADER 30
-#define CRAB 31
-#define EN_SHADOW 32
+
 
 //This is not efficient, because there is always an
 //entry for the enemy name even though every enemy has
@@ -338,15 +310,16 @@ const char item_names[][8] PROGMEM = {
 
 unsigned char inventory[6] = {2,1,16,1,16,16};//Each element == how much of each item
 
-uint8_t next_combat = 10;
+uint8_t next_combat = 32;
 
 void try_combat(){
   next_combat--;
   if( next_combat == 0 ){
+    meta_mode = mode; //Remember the mode we came from
     mode = TO_COMBAT;
     transition = -SCREEN_HEIGHT/2;
     gb.display.persistence = true;
-    next_combat = random(90)+10;//10-100 steps
+    next_combat = random(96)+32;//32-128 steps
   }
 }
 
@@ -424,12 +397,17 @@ uint8_t calculate_damage(uint8_t lvl){
 }
 
 void load_enemy_data(uint8_t index, uint8_t slot){
-  //Right now only support overworld enemy generation
-  //TODO: add support for dungeon spawn tables
-
-  //Use dudex and dudey to determine which pool to spawn enemies from
-  uint8_t en_ind = pgm_read_byte(&(world_spawns[dudey/8/16][dudex/8/16][index]));
-  const struct enemy* en = &(enemies[en_ind]);
+  uint8_t en_ind;
+  const struct enemy* en;
+  if( meta_mode == WORLD ){
+    //Use dudex and dudey to determine which pool to spawn enemies from
+    en_ind = pgm_read_byte(&(world_spawns[dudey/8/16][dudex/8/16][index]));
+    en = &(enemies[en_ind]);
+  }else{
+    //Use dungeon data to determine pool to spawn enemies from
+    en_ind = pgm_read_byte(&(dungeons[dungeonid].spawns[index]));
+    en = &(enemies[en_ind]);
+  }
   enemy_buffer[slot].lvl = pgm_read_byte(&(en->lvl));
   enemy_buffer[slot].spd = pgm_read_byte(&(en->spd));
   enemy_buffer[slot].img = pgm_read_byte(&(en->img));
@@ -871,7 +849,7 @@ void do_combat(){
             party[combat_selection].level++;//Level up!
           }
           combat_mode = PRECOMBAT;
-          mode = WORLD;
+          mode = meta_mode; //Switch back to previous mode, either dungeon or overworld
           return;
         }else if( combat_status[MUDLARK] == 0 ){ // If it is the mudlark's turn
           party[combat_selection].bonus_damage++;

@@ -807,26 +807,22 @@ void step_world(){
       dudey--;
       dudeanimation = UP;
       player_moving = 1;
-      //try_combat();  TODO: Restore combat
     }
   }
   else if(gb.buttons.repeat(BTN_DOWN,1) && !test_world_collision(DOWN)){
     dudey++;
     dudeanimation = DOWN;
     player_moving = 1;
-    //try_combat();  TODO: Restore combat
   }
   if(gb.buttons.repeat(BTN_LEFT,1) && !test_world_collision(LEFT)){
     dudex--;
     dudeanimation = LEFT;
     player_moving = 1;
-    //try_combat();  TODO: Restore combat
   }
   else if(gb.buttons.repeat(BTN_RIGHT,1) && !test_world_collision(RIGHT)){
     dudex++;
     dudeanimation = RIGHT;
     player_moving = 1;
-    //try_combat();  TODO: Restore combat
   }
 
   if( player_moving ){

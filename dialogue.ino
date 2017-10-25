@@ -1,3 +1,5 @@
+#include "dialogue.h"
+
 const char dialogue[][16] PROGMEM = {
 //"123456789012345",
 "THIS CITY IS",

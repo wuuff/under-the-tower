@@ -1,5 +1,6 @@
 #include "overworld.h"
 #include "dungeon.h"
+#include "battle.h"
 char dungeon_map[16][16];
 uint8_t dungeonid = 0;//Used to identify dungeon
 uint8_t dungeon_generated = 0;
@@ -66,30 +67,34 @@ B11111111,
 };
 
 #define MAPSIZE 16
+/*const struct dungeon dungeons[] PROGMEM = {
+  {10,24,DUN_THEME_CATPAW,2,{BIG_RAT,PATRON,BOUNCER}},
+  {10,24,DUN_THEME_CATPAW,2,{BIG_RAT,PATRON,BOUNCER}}
+};*/
 
 const struct dungeon dungeons[] PROGMEM = {
-  {10,24,DUN_STACK,DUN_THEME_CATPAW,2,DUN_END_BOSS},
-  {40,56,DUN_STACK,DUN_THEME_BRICK,3,DUN_END_CHEST},
-  {40,48,DUN_STACK,DUN_THEME_BRICK,6,DUN_END_CHEST},//{40,48,DUN_ZIGZAG,DUN_THEME_BRICK,6,DUN_END_CHEST},
-  {57,51,DUN_STACK,DUN_THEME_SHIP,2,DUN_END_CHEST},//{57,51,DUN_ZIGZAG,DUN_THEME_SHIP,2,DUN_END_CHEST},
-  {56,42,DUN_STACK,DUN_THEME_SHIP,4,DUN_END_BOSS},//{56,42,DUN_SPLIT,DUN_THEME_SHIP,4,DUN_END_BOSS},
-  {54,31,DUN_STACK,DUN_THEME_BRICK,2,DUN_END_CHEST},//{54,31,DUN_STACK,DUN_THEME_BRICK,2,DUN_END_CHEST},
+  {10,24,DUN_THEME_CATPAW,2,{BIG_RAT,PATRON,BOUNCER}},//{10,24,DUN_STACK,DUN_THEME_CATPAW,2,DUN_END_BOSS},
+  {40,56,DUN_THEME_BRICK,3,{THUG,SEA_RAT,SWABBIE}},//{40,56,DUN_STACK,DUN_THEME_BRICK,3,DUN_END_CHEST},
+  {40,48,DUN_THEME_BRICK,6,{THUG,SEA_RAT,SWABBIE}},//{40,48,DUN_STACK,DUN_THEME_BRICK,6,DUN_END_CHEST},//{40,48,DUN_ZIGZAG,DUN_THEME_BRICK,6,DUN_END_CHEST},
+  {57,51,DUN_THEME_SHIP,2,{SWABBIE,SAILOR,SKIPPER}},//{57,51,DUN_STACK,DUN_THEME_SHIP,2,DUN_END_CHEST},//{57,51,DUN_ZIGZAG,DUN_THEME_SHIP,2,DUN_END_CHEST},
+  {56,42,DUN_THEME_SHIP,4,{SWABBIE,SAILOR,SKIPPER}},//{56,42,DUN_STACK,DUN_THEME_SHIP,4,DUN_END_BOSS},//{56,42,DUN_SPLIT,DUN_THEME_SHIP,4,DUN_END_BOSS},
+  {54,31,DUN_THEME_BRICK,2,{WATCHER,BRUISER,MUSCLER}},//{54,31,DUN_STACK,DUN_THEME_BRICK,2,DUN_END_CHEST},//{54,31,DUN_STACK,DUN_THEME_BRICK,2,DUN_END_CHEST},
   //The following two were originally intended to connect
-  {44,31,DUN_STACK,DUN_THEME_WAREHOUSE,2,DUN_END_CHEST},
-  {36,31,DUN_STACK,DUN_THEME_WAREHOUSE,2,DUN_END_CHEST},
+  {44,31,DUN_THEME_WAREHOUSE,2,{WATCHER,BRUISER,MUSCLER}},//{44,31,DUN_STACK,DUN_THEME_WAREHOUSE,2,DUN_END_CHEST},
+  {36,31,DUN_THEME_WAREHOUSE,2,{WATCHER,BRUISER,MUSCLER}},//{36,31,DUN_STACK,DUN_THEME_WAREHOUSE,2,DUN_END_CHEST},
   //Two warehouse doors
-  {26,29,DUN_STACK,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},//{26,29,DUN_ZIGZAG,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},
-  {25,29,DUN_STACK,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},//{25,29,DUN_ZIGZAG,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},
+  {26,29,DUN_THEME_WAREHOUSE,4,{WATCHER,BRUISER,MUSCLER}},//{26,29,DUN_STACK,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},//{26,29,DUN_ZIGZAG,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},
+  {25,29,DUN_THEME_WAREHOUSE,4,{WATCHER,BRUISER,MUSCLER}},//{25,29,DUN_STACK,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},//{25,29,DUN_ZIGZAG,DUN_THEME_WAREHOUSE,4,DUN_END_CHEST},
   //The two hospital doors
-  {50,16,DUN_STACK,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},//{50,16,DUN_SPLIT,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},
-  {49,16,DUN_STACK,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},//{49,16,DUN_SPLIT,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},
-  {55,4,DUN_STACK,DUN_THEME_WAREHOUSE,8,DUN_END_CHEST},//{55,4,DUN_SPIRAL,DUN_THEME_WAREHOUSE,8,DUN_END_CHEST},
-  {14,4,DUN_STACK,DUN_THEME_HOUSE,2,DUN_END_CHEST},
-  {8,13,DUN_STACK,DUN_THEME_HOUSE,2,DUN_END_CHEST},
-  {14,13,DUN_STACK,DUN_THEME_HOUSE,2,DUN_END_CHEST},
+  {50,16,DUN_THEME_HOSPITAL,9,{DOCTOR,PATIENT,SUBJECT}},//{50,16,DUN_STACK,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},//{50,16,DUN_SPLIT,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},
+  {49,16,DUN_THEME_HOSPITAL,9,{DOCTOR,PATIENT,SUBJECT}},//{49,16,DUN_STACK,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},//{49,16,DUN_SPLIT,DUN_THEME_HOSPITAL,9,DUN_END_BOSS},
+  {55,4,DUN_THEME_WAREHOUSE,8,{RICHMAN,MAX_RAT,GUARD}},//{55,4,DUN_STACK,DUN_THEME_WAREHOUSE,8,DUN_END_CHEST},//{55,4,DUN_SPIRAL,DUN_THEME_WAREHOUSE,8,DUN_END_CHEST},
+  {14,4,DUN_THEME_HOUSE,2,{SNOB,RICHMAN,MAX_RAT}},//{14,4,DUN_STACK,DUN_THEME_HOUSE,2,DUN_END_CHEST},
+  {8,13,DUN_THEME_HOUSE,2,{SNOB,RICHMAN,MAX_RAT}},//{8,13,DUN_STACK,DUN_THEME_HOUSE,2,DUN_END_CHEST},
+  {14,13,DUN_THEME_HOUSE,2,{SNOB,RICHMAN,MAX_RAT}},//{14,13,DUN_STACK,DUN_THEME_HOUSE,2,DUN_END_CHEST},
   //The two doors of THE TOWER
-  {28,16,DUN_STACK,DUN_THEME_TOWER,40,DUN_END_BOSS},//{28,16,DUN_SPIRAL,DUN_THEME_TOWER,40,DUN_END_BOSS},
-  {29,16,DUN_STACK,DUN_THEME_TOWER,40,DUN_END_BOSS},//{28,16,DUN_SPIRAL,DUN_THEME_TOWER,40,DUN_END_BOSS},
+  {28,16,DUN_THEME_TOWER,40,{GUARD,GOLEM,OFFICER}},//{28,16,DUN_STACK,DUN_THEME_TOWER,40,DUN_END_BOSS},//{28,16,DUN_SPIRAL,DUN_THEME_TOWER,40,DUN_END_BOSS},
+  {29,16,DUN_THEME_TOWER,40,{GUARD,GOLEM,OFFICER}},//{29,16,DUN_STACK,DUN_THEME_TOWER,40,DUN_END_BOSS},//{28,16,DUN_SPIRAL,DUN_THEME_TOWER,40,DUN_END_BOSS},
 };
 
 void mapinit(char map[][MAPSIZE], int width, int height);
@@ -484,8 +489,8 @@ byte test_collision(byte dir){
 void test_collide_exit(uint8_t collision){
   switch( collision ){
     case DUN_TILE_DOOR: 
-      switch( pgm_read_byte(&(dungeons[dungeonid].type)) ){
-        case DUN_STACK:
+      //switch( pgm_read_byte(&(dungeons[dungeonid].type)) ){
+      //  case DUN_STACK:
           //In a stack layout, the only door is the exit to the dungeon,
           //so this one is simple: exit the dungeon and place the player outside
           mode = TO_WORLD;
@@ -493,9 +498,9 @@ void test_collide_exit(uint8_t collision){
           gb.display.persistence = true;
           dudex = pgm_read_byte(&(dungeons[dungeonid].x))*8;
           dudey = (pgm_read_byte(&(dungeons[dungeonid].y))+1)*8;
-        break;
+      //  break;
         //TODO: This requires more complex logic, depending on dungeon layout
-      }
+      //}
       return;
     case DUN_TILE_STAIRSUP:
       previous_level = dungeon_level;
@@ -550,7 +555,6 @@ void step_dungeon(){
       dudey--;
       dudeanimation = UP;
       player_moving = 1;
-      //try_combat();  TODO: Restore combat
     }
   }
   else if( gb.buttons.repeat(BTN_DOWN,1) ){
@@ -561,7 +565,6 @@ void step_dungeon(){
       dudey++;
       dudeanimation = DOWN;
       player_moving = 1;
-      //try_combat();  TODO: Restore combat
     }
   }
   if( gb.buttons.repeat(BTN_LEFT,1) ){
@@ -572,7 +575,6 @@ void step_dungeon(){
       dudex--;
       dudeanimation = LEFT;
       player_moving = 1;
-      //try_combat();  TODO: Restore combat
     }
   }
   else if( gb.buttons.repeat(BTN_RIGHT,1) ){
@@ -583,8 +585,11 @@ void step_dungeon(){
       dudex++;
       dudeanimation = RIGHT;
       player_moving = 1;
-      //try_combat();  TODO: Restore combat
     }
+  }
+
+  if( player_moving ){
+    try_combat();
   }
 }
 
@@ -762,8 +767,8 @@ void mapdetail(char map[][MAPSIZE], int width, int height){
 
 void mapexits(char map[][MAPSIZE], int width, int height){
   uint8_t i,j;
-  switch( pgm_read_byte(&(dungeons[dungeonid].type)) ){
-    case DUN_STACK:
+  //switch( pgm_read_byte(&(dungeons[dungeonid].type)) ){
+  //  case DUN_STACK:
       //If on ground floor, generate entrance door
       if( dungeon_level == 0 ){
         while(1){//Generate until we get a valid placement
@@ -836,11 +841,11 @@ void mapexits(char map[][MAPSIZE], int width, int height){
           }
         }
       }
-      break;
+      //break;
     //TODO: Add code that puts doors in random positions on fixed sides,
     //based on which level of the dungeon we are on, making sure they do
     //not have a wall blocking them. Do this for all other types.
-  }
+  //}
 }
 //ALSO TODO: add drawing of exit doors (and chests) as a separate thing
 //since it's common to all dungeons
