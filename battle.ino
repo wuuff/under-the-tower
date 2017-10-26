@@ -403,10 +403,23 @@ void load_enemy_data(uint8_t index, uint8_t slot){
     //Use dudex and dudey to determine which pool to spawn enemies from
     en_ind = pgm_read_byte(&(world_spawns[dudey/8/16][dudex/8/16][index]));
     en = &(enemies[en_ind]);
-  }else{
+  }else if( meta_mode == DUNGEON ){
     //Use dungeon data to determine pool to spawn enemies from
     en_ind = pgm_read_byte(&(dungeons[dungeonid].spawns[index]));
     en = &(enemies[en_ind]);
+  }else{
+    //If meta_mode actually contains the boss data
+    //It's always the center the first time it's called
+    //if( slot == 1 ){ //If it's the center enemy
+      en = &(enemies[meta_mode]);
+      meta_mode = DUNGEON;//This will be used to return to the dungeon now
+    //}
+    /*else{
+      //If it's not the center enemy, we don't want it
+      enemy_buffer[slot].lvl = -1;
+      combat_xp++;//Compensate for loss in combat_xp
+      return;//Skip setting enemy_buffer
+    }*/
   }
   enemy_buffer[slot].lvl = pgm_read_byte(&(en->lvl));
   enemy_buffer[slot].spd = pgm_read_byte(&(en->spd));
@@ -925,7 +938,7 @@ void do_combat(){
       //This is for debugging  TODO: remove
       if( menu_selection == MUDLARK_MENU ){
         combat_mode = PRECOMBAT;
-        mode = WORLD;
+        mode = meta_mode;
       }
 
 

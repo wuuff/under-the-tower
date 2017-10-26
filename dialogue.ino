@@ -1,4 +1,5 @@
 #include "dialogue.h"
+#include "battle.h"
 
 const char dialogue[][16] PROGMEM = {
 //"123456789012345",
@@ -40,7 +41,7 @@ const char dialogue[][16] PROGMEM = {
 "\n BRING HER TO",
 "\n HER FATHER",
 
-"YOUR KIND IS",
+/*"YOUR KIND IS",
 "\n NOT ALLOWED",
 "\n IN THE CATPAW",
 
@@ -50,7 +51,18 @@ const char dialogue[][16] PROGMEM = {
 
 "A KID LIKE YOU",
 "\n IS TOO YOUNG",
-"\n TO BE HERE"
+"\n TO BE HERE"*/
+
+"YOU DARE TO",
+"\n INTERFERE IN",
+"\n MY BUSINESS?",
+
+"THANK YOU",
+"I WAS AFRAID",
+"\n FOR MY LIFE",
+"MY FATHER LIVES",
+"\n AT THE DOCKS",
+"\n TO THE SOUTH",
 };
 
 void fill_dialogue_buffer(uint8_t index){
@@ -95,7 +107,7 @@ void step_dialogue(){
     gb.sound.playOK();
     if( dialogue_remaining == 0 ){
       // If dialogue is done, return to world mode
-      mode = WORLD;
+      mode = meta_mode;
     }else{
       // If dialogue is not done, move to next chunk of text
       dialogue_remaining--;

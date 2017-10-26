@@ -4,6 +4,8 @@
 #include "overworld.h"
 #include "save.h"
 #include "dialogue.h"
+#include "battle.h"
+#include "dungeon.h"
 #include <Gamebuino.h>
 Gamebuino gb;
 
@@ -69,6 +71,7 @@ void loop() {
           step_world();
           if( game_status[STATUS_SHADOW1] == 0 && dudex < 24*8 ){
             game_status[STATUS_SHADOW1] = 1;
+            meta_mode = WORLD;//So the dialogue displays the world
             dialogue_index = 19;
             dialogue_remaining = 5;
             mode = DIALOGUE;
@@ -81,6 +84,29 @@ void loop() {
         if( transition >= 0 ){
           draw_dungeon();
           step_dungeon();
+          //A really hacky way to implement the bosses
+          //CATPAW---SLAVER DIALOGUE
+          if( game_status[STATUS_SLAVER] == 0 && dungeonid == 0 && dungeon_level == 1 ){
+            game_status[STATUS_SLAVER] = 1;
+            meta_mode = TO_DUNGEON;
+            dialogue_index = 36;
+            dialogue_remaining = 0;
+            mode = DIALOGUE;
+          }
+          //CATPAW---SLAVER BOSS
+          else if( game_status[STATUS_SLAVER] == 1 ){
+            game_status[STATUS_SLAVER] = 2;
+            meta_mode = SLAVER;//Boss id stored in meta_mode
+            mode = COMBAT;
+          }
+          //CATPAW---GIRL THANKS
+          else if( game_status[STATUS_SLAVER] == 2 ){
+            game_status[STATUS_SLAVER] = 3;
+            meta_mode = DUNGEON;
+            dialogue_index = 39;
+            dialogue_remaining = 2;
+            mode = DIALOGUE;
+          }
         }
         break;
       case TO_COMBAT:
@@ -95,7 +121,10 @@ void loop() {
         }
         break;
       case DIALOGUE:
-        draw_world();
+        if( meta_mode == WORLD )
+          draw_world();
+        else
+          draw_dungeon();
         step_dialogue();
     }
 

@@ -1,6 +1,7 @@
 #ifndef DUNGEON_H
 #define DUNGEON_H
 extern uint8_t dungeonid;
+extern uint8_t dungeon_level;
 
 struct dungeon{
   uint8_t x;

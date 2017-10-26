@@ -31,3 +31,5 @@
 #define LEADER 30
 #define CRAB 31
 #define EN_SHADOW 32
+
+extern uint8_t meta_mode;
