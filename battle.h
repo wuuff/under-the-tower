@@ -32,4 +32,11 @@
 #define CRAB 31
 #define EN_SHADOW 32
 
+#define MUDLARK 0
+#define SHADOW 1
+#define NURSE 2
+
 extern uint8_t meta_mode;
+extern const char player_names[][8];
+extern const char enemy_names[][8];
+extern void copy_to_buffer(byte index, const char arr[][8]);

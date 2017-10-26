@@ -74,6 +74,7 @@ void loop() {
             meta_mode = WORLD;//So the dialogue displays the world
             dialogue_index = 19;
             dialogue_remaining = 5;
+            copy_to_buffer(SHADOW,player_names);
             mode = DIALOGUE;
           }
         }
@@ -91,6 +92,7 @@ void loop() {
             meta_mode = TO_DUNGEON;
             dialogue_index = 36;
             dialogue_remaining = 0;
+            copy_to_buffer(SLAVER,enemy_names);
             mode = DIALOGUE;
           }
           //CATPAW---SLAVER BOSS
@@ -105,6 +107,7 @@ void loop() {
             meta_mode = DUNGEON;
             dialogue_index = 39;
             dialogue_remaining = 2;
+            copy_to_buffer(3,player_names);
             mode = DIALOGUE;
           }
         }

@@ -260,7 +260,8 @@ const uint8_t world_spawns[4][4][3] PROGMEM = {
 const char player_names[][8] PROGMEM = {
 "MUDLARK",
 "SHADOW",
-"NURSE"
+"NURSE",
+"GIRL" //Not actually a playable character, but I needed the text somewhere....
 };
 
 struct character{

@@ -98,8 +98,10 @@ void step_dialogue(){
   gb.display.setColor(BLACK);
   gb.display.drawRect(0,SCREEN_HEIGHT/2-1,SCREEN_WIDTH,SCREEN_HEIGHT/2+1);
   
-  gb.display.cursorX = 4;
+  gb.display.cursorX = 1;
   gb.display.cursorY = SCREEN_HEIGHT/2;
+  gb.display.println(combat_buffer);//Display name of speaker, set before this
+  gb.display.cursorX = 4;
   fill_dialogue_buffer(dialogue_index);
   gb.display.print(combat_message);
 
