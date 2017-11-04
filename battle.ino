@@ -49,7 +49,7 @@ const struct min_enemy enemies[] PROGMEM = {
   {15,5,0},
   {18,3,2},
   {20,2,2},
-  {25,3,2},
+  //{25,3,2},  //Remove OVERMAN
   {25,4,0},
   {26,5,0},
   {26,6,0},
@@ -85,7 +85,7 @@ const char enemy_names[][8] PROGMEM = {
 "WATCHER",
 "BRUISER",
 "MUSCLER",
-"OVERMAN",
+//"OVERMAN",
 "DOCTOR",
 "PATIENT",
 "SUBJECT",
