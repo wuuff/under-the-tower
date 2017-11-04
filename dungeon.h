@@ -16,6 +16,9 @@ struct dungeon{
 #define NUM_DUNGEONS 18
 extern const struct dungeon dungeons[];
 
-#define NUM_DUN_TILES 5
+#define NUM_DUN_TILES 4
+#define NUM_COMMON_TILES 4
+
+#define DUN_WALL (NUM_DUN_TILES+NUM_COMMON_TILES+1)
 
 #endif

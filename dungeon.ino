@@ -64,6 +64,16 @@ B10101011,
 B10101011,
 B10101011,
 B11111111,
+//Wall top
+8,8,
+B10101010,
+B01010101,
+B10101010,
+B01010101,
+B10101010,
+B01010101,
+B10101010,
+B01010101,
 };
 
 #define MAPSIZE 16
@@ -104,15 +114,6 @@ void mapdetail(char map[][MAPSIZE], int mapwidth, int mapheight);
 const byte dungeon_tiles[] PROGMEM = {
   //DUN_THEME_CATPAW
 8,8,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-8,8,
 B01010101,
 B01010101,
 B01010101,
@@ -150,15 +151,6 @@ B00111100,
 B01000010,
   //DUN_THEME_BRICK
 8,8,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-8,8,
 B00100010,
 B11111111,
 B10001000,
@@ -195,15 +187,6 @@ B00011000,
 B00111100,
 B01000010,
   //DUN_THEME_SHIP
-  8,8,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
 8,8,
 B00000000,
 B00000000,
@@ -241,15 +224,6 @@ B10011001,
 B11100001,
 B11111111,
   //DUN_THEME_WAREHOUSE
-  8,8,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
 8,8,
 B00100010,
 B11111111,
@@ -287,15 +261,6 @@ B10011001,
 B11100001,
 B11111111,
   //DUN_THEME_HOSPITAL
-  8,8,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
 8,8,
 B00000001,
 B00000001,
@@ -333,15 +298,6 @@ B00111011,
 B01110111,
 B11011100,
   //DUN_THEME_HOUSE
-  8,8,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
 8,8,
 B01010101,
 B01010101,
@@ -379,15 +335,6 @@ B00011000,
 B00111100,
 B01000010,
   //DUN_THEME_TOWER
-  8,8,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
-B10101010,
-B01010101,
 8,8,
 B00000001,
 B00000001,
@@ -427,14 +374,19 @@ B11011100,
 };
 
 void draw_dungeon(){
+  uint8_t tile;
   for(byte i = 0; i < 16; i++){
     for(byte j = 0; j < 16; j++){
-      if( dungeon_map[i][j] != 0 ){
-        if( dungeon_map[i][j] <= NUM_DUN_TILES ){
-          gb.display.drawBitmap((j*8 - dudex)+(SCREEN_WIDTH/2-4),(i*8 - dudey)+(SCREEN_HEIGHT/2-4),&dungeon_tiles[(dungeon_map[i][j]-1+(pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES))*10]);
+      tile = dungeon_map[i][j];
+      if( tile != 0 ){
+        if( tile <= NUM_DUN_TILES+1 ){
+          /*gb.display.cursorX = (j*8 - dudex)+(SCREEN_WIDTH/2-4);
+          gb.display.cursorY = (i*8 - dudey)+(SCREEN_HEIGHT/2-4);
+          gb.display.print( ((tile-2)+(pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES) ) );*/
+          gb.display.drawBitmap((j*8 - dudex)+(SCREEN_WIDTH/2-4),(i*8 - dudey)+(SCREEN_HEIGHT/2-4),&dungeon_tiles[((tile-2)+(pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES))*10]);
         }else{
           //If this is a common tile, then draw that specific tile
-          gb.display.drawBitmap((j*8 - dudex)+(SCREEN_WIDTH/2-4),(i*8 - dudey)+(SCREEN_HEIGHT/2-4),&common_tiles[(dungeon_map[i][j]-1-NUM_DUN_TILES)*10]);
+          gb.display.drawBitmap((j*8 - dudex)+(SCREEN_WIDTH/2-4),(i*8 - dudey)+(SCREEN_HEIGHT/2-4),&common_tiles[(tile-2-NUM_DUN_TILES)*10]);
         }
       }
     }
@@ -600,17 +552,29 @@ void mapinit(char map[][MAPSIZE], int width, int height){
     for( i = 0; i < width; i++ ){
       for( j = 0; j < height; j++ ){
         map[j][i] = 0;
+        
+        //Less runtime efficiency, but more space efficiency putting this here
+        map[0][j] = DUN_WALL;
+        map[height-1][j] = DUN_WALL;
+
+        //Take advantage of square room TODO: if we have rectangular rooms this will break
+        map[j][0] = DUN_WALL;
+        map[j][width-1] = DUN_WALL;
       }
     }
     //Generate walls around the edges
-    for( i = 0; i < width; i++ ){
-      map[0][i] = 1;
-      map[height-1][i] = 1;
-    }
-    for( j = 0; j < height; j++ ){
-      map[j][0] = 1;
-      map[j][width-1] = 1;
-    }
+    /*for( i = 0; i < width; i++ ){
+      map[0][i] = DUN_WALL;
+      map[height-1][i] = DUN_WALL;
+
+      //Take advantage of square room TODO: if we have rectangular rooms this will break
+      map[i][0] = DUN_WALL;
+      map[i][width-1] = DUN_WALL;
+    }*/
+    /*for( j = 0; j < height; j++ ){
+      map[j][0] = DUN_WALL;
+      map[j][width-1] = DUN_WALL;
+    }*/
 }
 
 #define HORIZONTAL 0
@@ -694,7 +658,7 @@ void mapgen(char map[][MAPSIZE], int mapwidth, int mapheight, int startx, int st
         //printf("HORIZ %d\n",position);
         for( i = startx; i < startx + width; i++ ){
             if( i != door && i != door2 )
-                map[position][i] = 1;
+                map[position][i] = DUN_WALL;
         }
         //Recursively call to fill the two new spaces we generated
         mapgen(map, mapwidth, mapheight, startx, starty, endx,position);
@@ -718,7 +682,7 @@ void mapgen(char map[][MAPSIZE], int mapwidth, int mapheight, int startx, int st
         //printf("VERT %d\n",position);
         for( i = starty; i < starty + height; i++ ){
             if( i != door && i != door+1 && i != door2 && i != door2+1 )
-                map[i][position] = 1;
+                map[i][position] = DUN_WALL;
         }
         //Recursively call to fill the two new spaces we generated
         mapgen(map, mapwidth, mapheight, startx, starty, position,endy);
@@ -730,7 +694,7 @@ uint8_t check_proximity(char map[][MAPSIZE], uint8_t i, uint8_t j, uint8_t extra
   uint8_t k,m;
   for( k = i-2; k <= i+1+extra; k++ ){
     for( m = j-1; m <= j+1; m++ ){
-      if( map[k][m] == 1 ){
+      if( map[k][m] == DUN_WALL ){
         return 0;
       }
     }
@@ -745,7 +709,7 @@ void mapdetail(char map[][MAPSIZE], int width, int height){
   for( i = 1; i < height-1; i++ ){
     for( j = 1; j < width-1; j++ ){
       //Place a sideways wall under each wall top
-      if( map[i-1][j] == 1 && map[i][j] == 0 ){
+      if( map[i-1][j] == DUN_WALL && map[i][j] == 0 ){
         map[i][j] = 2;
       }
       //Check if we want to put something decorative
