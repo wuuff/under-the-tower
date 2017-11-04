@@ -17,6 +17,11 @@ struct enemy{
 struct enemy enemy_buffer[3];//Store data for enemies to battle
 
 
+struct min_enemy{
+  int8_t lvl;
+  uint8_t spd;
+  uint8_t img;
+};
 
 //This is not efficient, because there is always an
 //entry for the enemy name even though every enemy has
@@ -26,40 +31,40 @@ struct enemy enemy_buffer[3];//Store data for enemies to battle
 //array of 8-char strings in progmem, and I don't want to change all
 //that code for a special case with the name!  Therefore, this
 //approach is a bit inefficient because refactoring is a huge chore.
-const struct enemy enemies[] PROGMEM = {
-  {1,5,1,RAT},
-  {1,4,0,SCAMP},
-  {2,3,0,RUFFIAN},
-  {4,2,0,THUG},
-  {4,5,1,BIG_RAT},
-  {5,4,0,PATRON},
-  {5,5,2,BOUNCER},
-  {8,5,0,SLAVER},
-  {8,6,1,SEA_RAT},
-  {9,4,0,SWABBIE},
-  {11,3,0,SAILOR},
-  {10,5,0,SKIPPER},
-  {15,4,0,CAPTAIN},
-  {14,7,1,BAD_RAT},
-  {15,5,0,WATCHER},
-  {18,3,2,BRUISER},
-  {20,2,2,MUSCLER},
-  {25,3,2,OVERMAN},
-  {25,4,0,DOCTOR},
-  {26,5,0,PATIENT},
-  {26,6,0,SUBJECT},
-  {26,7,0,MUTANT},
-  {32,7,0,MADMAN},
-  {30,7,1,WOW_RAT},
-  {32,3,0,SNOB},
-  {35,2,0,RICHMAN},
-  {36,7,1,MAX_RAT},
-  {38,4,0,GUARD},
-  {42,2,0,GOLEM},
-  {40,4,0,OFFICER},
-  {50,7,0,LEADER},
-  {1,2,3,CRAB},
-  {8,7,0,EN_SHADOW},
+const struct min_enemy enemies[] PROGMEM = {
+  {1,5,1},
+  {1,4,0},
+  {2,3,0},
+  {4,2,0},
+  {4,5,1},
+  {5,4,0},
+  {5,5,2},
+  {8,5,0},
+  {8,6,1},
+  {9,4,0},
+  {11,3,0},
+  {10,5,0},
+  {15,4,0},
+  {14,7,1},
+  {15,5,0},
+  {18,3,2},
+  {20,2,2},
+  {25,3,2},
+  {25,4,0},
+  {26,5,0},
+  {26,6,0},
+  {26,7,0},
+  {32,7,0},
+  {30,7,1},
+  {32,3,0},
+  {35,2,0},
+  {36,7,1},
+  {38,4,0},
+  {42,2,0},
+  {40,4,0},
+  {50,7,0},
+  {1,2,3},
+  {8,7,0},
 };
 
 const char enemy_names[][8] PROGMEM = {
@@ -399,7 +404,7 @@ uint8_t calculate_damage(uint8_t lvl){
 
 void load_enemy_data(uint8_t index, uint8_t slot){
   uint8_t en_ind;
-  const struct enemy* en;
+  const struct min_enemy* en;
   if( meta_mode == WORLD ){
     //Use dudex and dudey to determine which pool to spawn enemies from
     en_ind = pgm_read_byte(&(world_spawns[dudey/8/16][dudex/8/16][index]));
@@ -412,6 +417,7 @@ void load_enemy_data(uint8_t index, uint8_t slot){
     //If meta_mode actually contains the boss data
     //It's always the center the first time it's called
     //if( slot == 1 ){ //If it's the center enemy
+      en_ind = meta_mode;
       en = &(enemies[meta_mode]);
       meta_mode = DUNGEON;//This will be used to return to the dungeon now
     //}
@@ -425,7 +431,7 @@ void load_enemy_data(uint8_t index, uint8_t slot){
   enemy_buffer[slot].lvl = pgm_read_byte(&(en->lvl));
   enemy_buffer[slot].spd = pgm_read_byte(&(en->spd));
   enemy_buffer[slot].img = pgm_read_byte(&(en->img));
-  enemy_buffer[slot].nme = pgm_read_byte(&(en->nme));
+  enemy_buffer[slot].nme = en_ind;
 }
 
 void gen_enemies(){
