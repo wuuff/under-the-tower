@@ -12,10 +12,9 @@ const char dialogue[][16] PROGMEM = {
 "\n HIGH ABOVE IN",
 "\n THE TOWER",
 "WHILE THE POOR",
-"\n DIE BELOW",
-"ON MUD FLATS",
-"\n BY THE RIVER",
-"\n THEY SCAVENGE",
+"\n SCAVENGE ON",
+"\n MUD FLATS BY",
+"\n THE RIVER",
 "THEY ARE KNOWN",
 "\n AS MUDLARKS",
 "THIS IS ABOUT",
@@ -63,6 +62,27 @@ const char dialogue[][16] PROGMEM = {
 "MY FATHER LIVES",
 "\n AT THE DOCKS",
 "\n TO THE SOUTH",
+
+"LISTEN!",
+"\n THUGS HOLD",
+"\n FATHER ABOVE",
+
+"WHO GOES THERE?",
+
+/*"I'M INDEBTED",
+"\n YET I ASK",
+"\n MORE OF YOU",
+"MY ELDEST",
+"\n DAUGHTER IS",
+"\n KIDNAPPED TOO",
+"SHE KNOWS OF",
+"\n SECRETS THEY",
+"\n WANT HIDDEN",
+"PLEASE GO TO",
+"\n THE BIG SHIP",
+"\n IN THE HARBOR",*/
+
+
 };
 
 void fill_dialogue_buffer(uint8_t index){
