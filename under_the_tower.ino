@@ -72,7 +72,7 @@ void loop() {
           if( game_status[STATUS_SHADOW1] == 0 && dudex < 24*8 ){
             game_status[STATUS_SHADOW1] = 1;
             meta_mode = WORLD;//So the dialogue displays the world
-            dialogue_index = 19;
+            dialogue_index = 18;
             dialogue_remaining = 5;
             copy_to_buffer(SHADOW,player_names);
             mode = DIALOGUE;
@@ -90,7 +90,7 @@ void loop() {
           if( game_status[STATUS_SLAVER] == 0 && dungeonid == 0 && dungeon_level == 1 ){
             game_status[STATUS_SLAVER] = 1;
             meta_mode = TO_DUNGEON;
-            dialogue_index = 36;
+            dialogue_index = 35;
             dialogue_remaining = 0;
             copy_to_buffer(SLAVER,enemy_names);
             mode = DIALOGUE;
@@ -105,7 +105,7 @@ void loop() {
           else if( game_status[STATUS_SLAVER] == 2 ){
             game_status[STATUS_SLAVER] = 3;
             meta_mode = DUNGEON;
-            dialogue_index = 39;
+            dialogue_index = 38;
             dialogue_remaining = 2;
             copy_to_buffer(3,player_names);
             mode = DIALOGUE;
