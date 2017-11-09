@@ -71,18 +71,10 @@ void loop() {
           step_world();
           if( game_status[STATUS_MAIN] == 0 && dudex < 24*8 ){
             game_status[STATUS_MAIN] = 1;
-            meta_mode = WORLD;//So the dialogue displays the world
-            dialogue_index = TXT_SDW_INTRO;
-            dialogue_remaining = TXT_SDW_INTRO_LEN;
-            copy_to_buffer(SHADOW,player_names);
-            mode = DIALOGUE;
+            display_dialogue(WORLD,TXT_SDW_INTRO,TXT_SDW_INTRO_LEN,SHADOW,player_names);
           }else if( game_status[STATUS_MAIN] == 1 && dudey < 41*8 ){
             game_status[STATUS_MAIN] = 2;
-            meta_mode = WORLD;//So the dialogue displays the world
-            dialogue_index = TXT_SDW_CATPAW;
-            dialogue_remaining = TXT_SDW_CATPAW_LEN;
-            copy_to_buffer(SHADOW,player_names);
-            mode = DIALOGUE;
+            display_dialogue(WORLD,TXT_SDW_CATPAW,TXT_SDW_CATPAW_LEN,SHADOW,player_names);
           }
         }
         break;
@@ -96,11 +88,7 @@ void loop() {
           //CATPAW---SLAVER DIALOGUE
           if( game_status[STATUS_MAIN] == 2 && dungeonid == 0 && dungeon_level == 1 ){
             game_status[STATUS_MAIN] = 3;
-            meta_mode = TO_DUNGEON;
-            dialogue_index = TXT_SLAVER;
-            dialogue_remaining = TXT_SLAVER_LEN;
-            copy_to_buffer(SLAVER,enemy_names);
-            mode = DIALOGUE;
+            display_dialogue(mode,TXT_SLAVER,TXT_SLAVER_LEN,SLAVER,enemy_names);
           }
           //CATPAW---SLAVER BOSS
           else if( game_status[STATUS_MAIN] == 3 ){
@@ -111,29 +99,17 @@ void loop() {
           //CATPAW---GIRL THANKS
           else if( game_status[STATUS_MAIN] == 4 ){
             game_status[STATUS_MAIN] = 5;
-            meta_mode = DUNGEON;
-            dialogue_index = TXT_GIRL_THX;
-            dialogue_remaining = TXT_GIRL_THX_LEN;
-            copy_to_buffer(3,player_names);
-            mode = DIALOGUE;
+            display_dialogue(mode,TXT_GIRL_THX,TXT_GIRL_THX_LEN,3,player_names);
           }
           //FATHER'S RESIDENCE---GIRL WARNING
           else if( game_status[STATUS_MAIN] == 5 && dungeonid == 1 && dungeon_level == 0 ){
             game_status[STATUS_MAIN] = 6;
-            meta_mode = DUNGEON;
-            dialogue_index = TXT_GIRL_FATHER;
-            dialogue_remaining = TXT_GIRL_FATHER_LEN;
-            copy_to_buffer(3,player_names);
-            mode = DIALOGUE;
+            display_dialogue(mode,TXT_GIRL_FATHER,TXT_GIRL_FATHER_LEN,3,player_names);
           }
           //FATHER'S RESIDENCE---ENEMY ALERT
-          else if( game_status[STATUS_MAIN] == 6 && dungeonid == 1 && dungeon_level == 1 ){
+          else if( game_status[STATUS_MAIN] == 6 && dungeonid == 1 && dungeon_level == 2 ){
             game_status[STATUS_MAIN] = 7;
-            meta_mode = DUNGEON;
-            dialogue_index = TXT_ENEMY;
-            dialogue_remaining = TXT_ENEMY_LEN;
-            copy_to_buffer(3,enemy_names);
-            mode = DIALOGUE;
+            display_dialogue(mode,TXT_ENEMY,TXT_ENEMY_LEN,3,enemy_names);
           }
           //FATHER'S RESIDENCE---THUG MINIBOSS
           else if( game_status[STATUS_MAIN] == 7 ){
@@ -144,11 +120,7 @@ void loop() {
           //FATHER'S RESIDENCE---FATHER THANKS
           else if( game_status[STATUS_MAIN] == 8 ){
             game_status[STATUS_MAIN] = 9;
-            meta_mode = DUNGEON;
-            dialogue_index = TXT_FATHER;
-            dialogue_remaining = TXT_FATHER;
-            copy_to_buffer(4,player_names);
-            mode = DIALOGUE;
+            display_dialogue(mode,TXT_FATHER,TXT_FATHER_LEN,4,player_names);
           }
         }
         break;

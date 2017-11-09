@@ -1,6 +1,8 @@
 extern uint8_t dialogue_index;
 extern uint8_t dialogue_remaining;
 
+extern void display_dialogue(uint8_t, uint8_t, uint8_t, uint8_t, const char[][8]);
+
 #define TXT_INTRO 0
 #define TXT_INTRO_LEN 6
 
