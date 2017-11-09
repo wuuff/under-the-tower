@@ -1,4 +1,5 @@
-#define STATUS_SHADOW1 0
+//Main quest status
+#define STATUS_MAIN 0
 #define STATUS_SHADOW2 1
 #define STATUS_SLAVER 2
 

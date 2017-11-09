@@ -52,6 +52,9 @@ const char dialogue[][16] PROGMEM = {
 "\n IS TOO YOUNG",
 "\n TO BE HERE"*/
 
+"THE CATPAW",
+"\n LIES NORTH",
+
 "YOU DARE TO",
 "\n INTERFERE IN",
 "\n MY BUSINESS?",
@@ -69,7 +72,7 @@ const char dialogue[][16] PROGMEM = {
 
 "WHO GOES THERE?",
 
-/*"I'M INDEBTED",
+"I'M INDEBTED",
 "\n YET I ASK",
 "\n MORE OF YOU",
 "MY ELDEST",
@@ -80,7 +83,7 @@ const char dialogue[][16] PROGMEM = {
 "\n WANT HIDDEN",
 "PLEASE GO TO",
 "\n THE BIG SHIP",
-"\n IN THE HARBOR",*/
+"\n IN THE HARBOR",
 
 
 };
