@@ -88,8 +88,8 @@ const char dialogue[][16] PROGMEM = {
 
 };
 
-void display_dialogue(uint8_t prev_mode, uint8_t index, uint8_t len, uint8_t who, const char name_list[][8]){
-  meta_mode = prev_mode;
+void display_dialogue(uint8_t index, uint8_t len, uint8_t who, const char name_list[][8]){
+  meta_mode = mode;
   dialogue_index = index;
   dialogue_remaining = len;
   copy_to_buffer(who,name_list);

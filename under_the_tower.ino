@@ -71,10 +71,10 @@ void loop() {
           step_world();
           if( game_status[STATUS_MAIN] == 0 && dudex < 24*8 ){
             game_status[STATUS_MAIN] = 1;
-            display_dialogue(WORLD,TXT_SDW_INTRO,TXT_SDW_INTRO_LEN,SHADOW,player_names);
+            display_dialogue(TXT_SDW_INTRO,TXT_SDW_INTRO_LEN,SHADOW,player_names);
           }else if( game_status[STATUS_MAIN] == 1 && dudey < 41*8 ){
             game_status[STATUS_MAIN] = 2;
-            display_dialogue(WORLD,TXT_SDW_CATPAW,TXT_SDW_CATPAW_LEN,SHADOW,player_names);
+            display_dialogue(TXT_SDW_CATPAW,TXT_SDW_CATPAW_LEN,SHADOW,player_names);
           }
         }
         break;
@@ -88,7 +88,7 @@ void loop() {
           //CATPAW---SLAVER DIALOGUE
           if( game_status[STATUS_MAIN] == 2 && dungeonid == 0 && dungeon_level == 1 ){
             game_status[STATUS_MAIN] = 3;
-            display_dialogue(mode,TXT_SLAVER,TXT_SLAVER_LEN,SLAVER,enemy_names);
+            display_dialogue(TXT_SLAVER,TXT_SLAVER_LEN,SLAVER,enemy_names);
           }
           //CATPAW---SLAVER BOSS
           else if( game_status[STATUS_MAIN] == 3 ){
@@ -99,17 +99,17 @@ void loop() {
           //CATPAW---GIRL THANKS
           else if( game_status[STATUS_MAIN] == 4 ){
             game_status[STATUS_MAIN] = 5;
-            display_dialogue(mode,TXT_GIRL_THX,TXT_GIRL_THX_LEN,3,player_names);
+            display_dialogue(TXT_GIRL_THX,TXT_GIRL_THX_LEN,3,player_names);
           }
           //FATHER'S RESIDENCE---GIRL WARNING
           else if( game_status[STATUS_MAIN] == 5 && dungeonid == 1 && dungeon_level == 0 ){
             game_status[STATUS_MAIN] = 6;
-            display_dialogue(mode,TXT_GIRL_FATHER,TXT_GIRL_FATHER_LEN,3,player_names);
+            display_dialogue(TXT_GIRL_FATHER,TXT_GIRL_FATHER_LEN,3,player_names);
           }
           //FATHER'S RESIDENCE---ENEMY ALERT
           else if( game_status[STATUS_MAIN] == 6 && dungeonid == 1 && dungeon_level == 2 ){
             game_status[STATUS_MAIN] = 7;
-            display_dialogue(mode,TXT_ENEMY,TXT_ENEMY_LEN,3,enemy_names);
+            display_dialogue(TXT_ENEMY,TXT_ENEMY_LEN,3,enemy_names);
           }
           //FATHER'S RESIDENCE---THUG MINIBOSS
           else if( game_status[STATUS_MAIN] == 7 ){
@@ -120,7 +120,7 @@ void loop() {
           //FATHER'S RESIDENCE---FATHER THANKS
           else if( game_status[STATUS_MAIN] == 8 ){
             game_status[STATUS_MAIN] = 9;
-            display_dialogue(mode,TXT_FATHER,TXT_FATHER_LEN,4,player_names);
+            display_dialogue(TXT_FATHER,TXT_FATHER_LEN,4,player_names);
           }
         }
         break;
