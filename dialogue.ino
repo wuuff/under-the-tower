@@ -66,6 +66,14 @@ const char dialogue[][16] PROGMEM = {
 "\n AT THE DOCKS",
 "\n TO THE SOUTH",
 
+"IMPRESSIVE BUT",
+"\n NOW YOU MUST",
+"\n PASS MY TEST",
+
+"WELL DONE",
+"\n I SHALL JOIN",
+"\n YOU IN BATTLE",
+
 "LISTEN!",
 "\n THUGS HOLD",
 "\n FATHER ABOVE",
@@ -85,7 +93,15 @@ const char dialogue[][16] PROGMEM = {
 "\n THE BIG SHIP",
 "\n IN THE HARBOR",
 
-
+"THIS SHIP IS",
+"\n WHERE HIS",
+"\n DAUGHTER IS",
+"SHE WAS A NURSE",
+"\n AT THE CITY",
+"\n HOSPITAL WHEN",
+"SHE FOUND",
+"\n A SECRET TO",
+"\n THE PLAGUE",
 };
 
 void display_dialogue(uint8_t index, uint8_t len, uint8_t who, const char name_list[][8]){
