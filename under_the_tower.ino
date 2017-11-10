@@ -75,6 +75,9 @@ void loop() {
           }else if( game_status[STATUS_MAIN] == 1 && dudey < 41*8 ){
             game_status[STATUS_MAIN] = 2;
             display_dialogue(TXT_SDW_CATPAW,TXT_SDW_CATPAW_LEN,SHADOW,player_names);
+          }else if( game_status[STATUS_MAIN] == 12 && dudex > 55*8 && dudey < 45*8 ){
+            game_status[STATUS_MAIN] = 13;
+            display_dialogue(TXT_SDW_SHIP,TXT_SDW_SHIP_LEN,SHADOW,player_names);
           }
         }
         break;
@@ -101,26 +104,53 @@ void loop() {
             game_status[STATUS_MAIN] = 5;
             display_dialogue(TXT_GIRL_THX,TXT_GIRL_THX_LEN,3,player_names);
           }
-          //FATHER'S RESIDENCE---GIRL WARNING
-          else if( game_status[STATUS_MAIN] == 5 && dungeonid == 1 && dungeon_level == 0 ){
+          //CATPAW---SHADOW DIALOGUE
+          if( game_status[STATUS_MAIN] == 5  && dungeon_level == 0 ){
             game_status[STATUS_MAIN] = 6;
+            display_dialogue(TXT_SDW_BATTLE,TXT_SDW_BATTLE_LEN,SHADOW,player_names);
+          }
+          //CATPAW---SHADOW BOSS
+          else if( game_status[STATUS_MAIN] == 6 ){
+            game_status[STATUS_MAIN] = 7;
+            meta_mode = EN_SHADOW;//Boss id stored in meta_mode
+            mode = COMBAT;
+          }
+          //CATPAW---SHADOW JOINS
+          else if( game_status[STATUS_MAIN] == 7 ){
+            game_status[STATUS_MAIN] = 8;
+            display_dialogue(TXT_SDW_WIN,TXT_SDW_WIN_LEN,SHADOW,player_names);
+          }
+          //FATHER'S RESIDENCE---GIRL WARNING
+          else if( game_status[STATUS_MAIN] == 8 && dungeonid == 1 && dungeon_level == 0 ){
+            game_status[STATUS_MAIN] = 9;
             display_dialogue(TXT_GIRL_FATHER,TXT_GIRL_FATHER_LEN,3,player_names);
           }
           //FATHER'S RESIDENCE---ENEMY ALERT
-          else if( game_status[STATUS_MAIN] == 6 && dungeonid == 1 && dungeon_level == 2 ){
-            game_status[STATUS_MAIN] = 7;
-            display_dialogue(TXT_ENEMY,TXT_ENEMY_LEN,3,enemy_names);
+          else if( game_status[STATUS_MAIN] == 9 && dungeonid == 1 && dungeon_level == 2 ){
+            game_status[STATUS_MAIN] = 10;
+            display_dialogue(TXT_ENEMY,TXT_ENEMY_LEN,THUG,enemy_names);
           }
           //FATHER'S RESIDENCE---THUG MINIBOSS
-          else if( game_status[STATUS_MAIN] == 7 ){
-            game_status[STATUS_MAIN] = 8;
+          else if( game_status[STATUS_MAIN] == 10 ){
+            game_status[STATUS_MAIN] = 11;
             meta_mode = THUG;//Boss id stored in meta_mode
             mode = COMBAT;
           }
           //FATHER'S RESIDENCE---FATHER THANKS
-          else if( game_status[STATUS_MAIN] == 8 ){
-            game_status[STATUS_MAIN] = 9;
+          else if( game_status[STATUS_MAIN] == 11 ){
+            game_status[STATUS_MAIN] = 12;
             display_dialogue(TXT_FATHER,TXT_FATHER_LEN,4,player_names);
+          }
+          //LARGE SHIP---ENEMY ALERT
+          else if( game_status[STATUS_MAIN] == 13 && dungeonid == 4 && dungeon_level == 3 ){
+            game_status[STATUS_MAIN] = 14;
+            display_dialogue(TXT_ENEMY,TXT_ENEMY_LEN,CAPTAIN,enemy_names);
+          }
+          //FATHER'S RESIDENCE---THUG MINIBOSS
+          else if( game_status[STATUS_MAIN] == 14 ){
+            game_status[STATUS_MAIN] = 15;
+            meta_mode = CAPTAIN;//Boss id stored in meta_mode
+            mode = COMBAT;
           }
         }
         break;
