@@ -69,7 +69,11 @@ void loop() {
         if( transition >= 0 ){
           draw_world();
           step_world();
-          if( game_status[STATUS_MAIN] == 0 && dudex < 24*8 ){
+          if( game_status[STATUS_MAIN] == -1 ){
+            game_status[STATUS_MAIN] = 0;
+            display_dialogue(TXT_INTRO,TXT_INTRO_LEN,15,menu_text);
+          }
+          else if( game_status[STATUS_MAIN] == 0 && dudex < 7*8 ){
             game_status[STATUS_MAIN] = 1;
             display_dialogue(TXT_SDW_INTRO,TXT_SDW_INTRO_LEN,SHADOW,player_names);
           }else if( game_status[STATUS_MAIN] == 1 && dudey < 41*8 ){

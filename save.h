@@ -4,4 +4,4 @@
 #define STATUS_SLAVER 2
 
 //All game status variables
-extern uint8_t game_status[];
+extern int8_t game_status[];

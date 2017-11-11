@@ -724,8 +724,8 @@ uint8_t world_get(uint16_t index){
   }
 }
 
-uint16_t dudex = 10*8;//37*8;//25*8;//8*8;//25*8;
-uint16_t dudey = 26*8;//49*8;//57*8;//27*8;//57*8;
+uint16_t dudex = 25*8;//10*8;//37*8;//25*8;//8*8;//25*8;
+uint16_t dudey = 57*8;//26*8;//49*8;//57*8;//27*8;//57*8;
 
 byte dudeanimation = DOWN;
 byte dudeframe = 0;

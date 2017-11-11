@@ -39,4 +39,5 @@
 extern uint8_t meta_mode;
 extern const char player_names[][8];
 extern const char enemy_names[][8];
+extern const char menu_text[][8];
 extern void copy_to_buffer(byte index, const char arr[][8]);
