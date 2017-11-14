@@ -36,8 +36,22 @@
 #define SHADOW 1
 #define NURSE 2
 
+#ifndef CHARACTER
+#define CHARACTER
+struct character{
+  uint8_t level;
+  uint16_t health;
+  uint8_t speed;
+  uint8_t xp;
+  uint8_t bonus_speed;
+  uint8_t bonus_damage;
+  uint8_t bonus_defense;
+};
+#endif
+
 extern uint8_t meta_mode;
 extern const char player_names[][8];
 extern const char enemy_names[][8];
 extern const char menu_text[][8];
 extern void copy_to_buffer(byte index, const char arr[][8]);
+extern struct character party[3];

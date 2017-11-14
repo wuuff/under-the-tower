@@ -133,7 +133,11 @@ void step_dialogue(){
   
   gb.display.cursorX = 1;
   gb.display.cursorY = SCREEN_HEIGHT/2;
-  gb.display.println(combat_buffer);//Display name of speaker, set before this
+  //If the first char is a zero, then no character is speaking, so skip this
+  //so that narration gets four lines to work with
+  if( combat_buffer[0] != 0 ){
+    gb.display.println(combat_buffer);//Display name of speaker, set before this
+  }
   gb.display.cursorX = 4;
   gb.display.print(combat_message);
 

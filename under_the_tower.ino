@@ -93,7 +93,7 @@ void loop() {
           step_dungeon();
           //A really hacky way to implement the bosses
           //CATPAW---SLAVER DIALOGUE
-          if( game_status[STATUS_MAIN] == 2 && dungeonid == 0 && dungeon_level == 1 ){
+          if( game_status[STATUS_MAIN] == 2 && dungeonid == 0 && dungeon_level == 2 ){
             game_status[STATUS_MAIN] = 3;
             display_dialogue(TXT_SLAVER,TXT_SLAVER_LEN,SLAVER,enemy_names);
           }
@@ -123,6 +123,7 @@ void loop() {
           else if( game_status[STATUS_MAIN] == 7 ){
             game_status[STATUS_MAIN] = 8;
             display_dialogue(TXT_SDW_WIN,TXT_SDW_WIN_LEN,SHADOW,player_names);
+            party[SHADOW].level = 8;//Add shadow to party
           }
           //FATHER'S RESIDENCE---GIRL WARNING
           else if( game_status[STATUS_MAIN] == 8 && dungeonid == 1 && dungeon_level == 0 ){

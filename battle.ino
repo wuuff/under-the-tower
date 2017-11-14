@@ -270,20 +270,10 @@ const char player_names[][8] PROGMEM = {
 "FATHER"
 };
 
-struct character{
-  uint8_t level;
-  uint16_t health;
-  uint8_t speed;
-  uint8_t xp;
-  uint8_t bonus_speed;
-  uint8_t bonus_damage;
-  uint8_t bonus_defense;
-};
-
 struct character party[3] = {
-  {1,10,4,0,0,0,0}, // Mudlark
-  {8,80,3,0,0,0,0}, // Shadow
-  {32,320,4,0,0,0,0} // Nurse
+  {1,20,4,0,0,0,0}, // Mudlark
+  {0,160,3,0,0,0,0}, // Shadow
+  {0,640,4,0,0,0,0} // Nurse
 };
 
 uint8_t shadow_stealth_bonus = 0;
@@ -326,7 +316,7 @@ void try_combat(){
     mode = TO_COMBAT;
     transition = -SCREEN_HEIGHT/2;
     gb.display.persistence = true;
-    next_combat = random(96)+32;//32-128 steps
+    next_combat = random(192)+64;//32-256 steps
   }
 }
 
@@ -397,7 +387,7 @@ char combat_message[64];//Max of 64 characters in message, which should be plent
 int8_t combat_status[6] = {0,0,0,0,0,0};//Determines who moves next
 uint8_t combat_xp = 0;
 
-uint8_t enemy_health[3];
+uint16_t enemy_health[3];
 
 uint8_t calculate_damage(uint8_t lvl){
   return lvl*10/8;
@@ -441,14 +431,14 @@ void gen_enemies(){
   //Always generate center enemy
   enemy_index = random(3);
   load_enemy_data(enemy_index,1);
-  combat_xp+=enemy_buffer[1].lvl;
-  enemy_health[1] = enemy_buffer[1].lvl*10/2;
+  combat_xp+=enemy_buffer[1].lvl * 2;
+  enemy_health[1] = enemy_buffer[1].lvl*10;
   //50% chance of left enemy
   if( random(2) == 0 ){
     enemy_index = random(3);
     load_enemy_data(enemy_index,0);
-    combat_xp+=enemy_buffer[0].lvl;
-    enemy_health[0] = enemy_buffer[0].lvl*10/2;
+    combat_xp+=enemy_buffer[0].lvl * 2;
+    enemy_health[0] = enemy_buffer[0].lvl*10;
   }else{
     enemy_buffer[0].lvl = -1;
   }
@@ -456,8 +446,8 @@ void gen_enemies(){
   if( random(2) == 0 ){
     enemy_index = random(3);
     load_enemy_data(enemy_index,2);
-    combat_xp+=enemy_buffer[2].lvl;
-    enemy_health[2] = enemy_buffer[2].lvl*10/2;
+    combat_xp+=enemy_buffer[2].lvl * 2;
+    enemy_health[2] = enemy_buffer[2].lvl*10;
   }else{
     enemy_buffer[2].lvl = -1;
   }
@@ -628,6 +618,18 @@ void draw_menu(byte index){
   }
 }
 
+void give_xp(){
+  //Give xp to chosen character
+  party[combat_selection].xp+=combat_xp;
+  if( party[combat_selection].xp >= party[combat_selection].level*2 ){
+    party[combat_selection].xp -= (party[combat_selection].level*2);// Keep previous xp
+    party[combat_selection].health += ((party[combat_selection].level+1)*20)-(party[combat_selection].level*20);// Give enough health that full health stays at full health
+    party[combat_selection].level++;//Level up!
+  }
+  combat_mode = PRECOMBAT;
+  mode = meta_mode; //Switch back to previous mode, either dungeon or overworld
+}
+
 void do_combat_step(){
   uint8_t i;
   for( i = 0; i < 3; i++ ){
@@ -702,8 +704,14 @@ void do_combat(){
         byte step_forward = 1;
         gb.sound.playTick();
         if( combat_mode == VICTORY ){
-          combat_mode = POSTCOMBAT;
-          menu_selection = ALLY_MENU;
+          //If there is more than one party member, ask who to give xp to
+          if( party[SHADOW].level > 0 ){
+            combat_mode = POSTCOMBAT;
+            menu_selection = ALLY_MENU;
+          }else{
+            combat_selection = 0;// Select mudlark to give xp to
+            give_xp();
+          }
           return;
         }
         //First check if all enemies have died
@@ -732,7 +740,7 @@ void do_combat(){
 
     if( combat_mode >= MUDLARK && combat_mode <= NURSE ){
       gb.display.drawRect(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+1, SCREEN_WIDTH/2-2, 3);
-      gb.display.drawLine(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+2, SCREEN_WIDTH/2+((SCREEN_WIDTH/2-4)*party[combat_mode].health)/(party[combat_mode].level*10), SCREEN_HEIGHT/2+2);
+      gb.display.drawLine(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+2, SCREEN_WIDTH/2+((SCREEN_WIDTH/2-4)*party[combat_mode].health)/(party[combat_mode].level*20), SCREEN_HEIGHT/2+2);
       
       gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
       gb.display.cursorY = SCREEN_HEIGHT/2+6;
@@ -742,7 +750,7 @@ void do_combat(){
       gb.display.cursorY = SCREEN_HEIGHT/2+12;
       gb.display.print(party[combat_mode].health);
       gb.display.print(F("/"));
-      gb.display.print(party[combat_mode].level*10);
+      gb.display.print(party[combat_mode].level*20);
   
       gb.display.cursorX = SCREEN_WIDTH-33;//8*4+1
       gb.display.cursorY = SCREEN_HEIGHT/2+18;
@@ -783,22 +791,22 @@ void do_combat(){
         combat_message[append_to_msg_buffer( 5, menu_text, 0 )] = 0;
         combat_mode = MESSAGE;
       }else if( menu_selection == NURSE_MENU && combat_selection == 1 ){
-        uint16_t healing = party[NURSE].level; // Heal 10% of NURSE's health for everyone
+        uint16_t healing = 2*party[NURSE].level; // Heal 10% of NURSE's health for everyone
         // Heal an extra amount by (5% of original healing + 1) * bonus_damage
         // Therefore, the nurse's damage bonus is used for healing since she has no attack. 
         healing += (healing/10/2 + 1)*party[NURSE].bonus_damage;
         for( uint8_t i = 0; i < 3; i++ ){
           party[i].health+=healing;
-          if( party[i].health > party[i].level*10 ) party[i].health = party[i].level*10;//Cap off healing
+          if( party[i].health > party[i].level*20 ) party[i].health = party[i].level*20;//Cap off healing
         }
         copy_action_to_msg_buffer(0,0,healing, HEALALL);
         // TODO: Display how much all heal by, now that the heal amount is unified by the nurse's level
         combat_mode = MESSAGE;
       }else if( menu_selection == MUDLARK_MENU && combat_selection == 2 ){ //Scavenge
-        if( random(100) < 50 ){ //Highest chance to get fruit
+        if( random(100) < 25 ){ //Highest chance to get fruit
           inventory[ITEM_FRUIT]++;
           copy_action_to_msg_buffer(0,0,ITEM_FRUIT, PITEM);
-        }else if( random(100) < 50 ){ //Second highest chance to get bread
+        }else if( random(100) < 25 ){ //Second highest chance to get bread
           inventory[ITEM_BREAD]++;
           copy_action_to_msg_buffer(0,0,ITEM_BREAD, PITEM);
         }else{ //All the rest of the items have an equal chance
@@ -808,7 +816,7 @@ void do_combat(){
         }
         combat_mode = MESSAGE;
       }else if( menu_selection == SHADOW_MENU && combat_selection == 2 ){ //Shadow's speed boost
-        party[SHADOW].bonus_speed+=2;//Speed up by 2!
+        party[SHADOW].bonus_speed+=3;//Speed up by 3!
         copy_action_to_msg_buffer(SHADOW,0,1, PSPEED);
         combat_mode = MESSAGE;
       }else if( menu_selection == NURSE_MENU && combat_selection == 2 ){ //Nurse's protect
@@ -862,32 +870,24 @@ void do_combat(){
         //but not the shadow in the party.
         // Check if this is post-combat xp allocation or nurse ability
         if( combat_mode == POSTCOMBAT ){
-          //Give xp to chosen character
-          party[combat_selection].xp+=combat_xp;
-          if( party[combat_selection].xp >= party[combat_selection].level*2 ){
-            party[combat_selection].xp -= (party[combat_selection].level*2);// Keep previous xp
-            party[combat_selection].health += ((party[combat_selection].level+1)*10)-(party[combat_selection].level*10);// Give enough health that full health stays at full health
-            party[combat_selection].level++;//Level up!
-          }
-          combat_mode = PRECOMBAT;
-          mode = meta_mode; //Switch back to previous mode, either dungeon or overworld
+          give_xp();
           return;
         }else if( combat_status[MUDLARK] == 0 ){ // If it is the mudlark's turn
-          party[combat_selection].bonus_damage++;
+          party[combat_selection].bonus_damage+=2;
           copy_action_to_msg_buffer(combat_selection,0,1, PDAMAGE);
           combat_mode = MESSAGE;
         }else if( nurse_protect_bonus == -1 ){ // If we are not trying to select who to protect, and instead heal
           //Nurse's HEAL ONE ability
           //Remember, this assumes that we are not missing a character---if I add the ability to 
           //revive fallen party members (vs an instant game over) then this will need to change...
-          uint16_t healing = 2*party[NURSE].level;// Heal 20% of NURSE's health
+          uint16_t healing = 4*party[NURSE].level;// Heal 20% of NURSE's health
           // Heal an extra amount by (5% of original healing + 1) * bonus_damage
           // Therefore, the nurse's damage bonus is used for healing since she has no attack. 
           healing += (healing/10/2 + 1)*party[NURSE].bonus_damage;
           party[combat_selection].health += healing;
-          if( party[combat_selection].health > party[combat_selection].level*10 ){
+          if( party[combat_selection].health > party[combat_selection].level*20 ){
             //Cap off health
-            party[combat_selection].health = party[combat_selection].level*10;
+            party[combat_selection].health = party[combat_selection].level*20;
           }
           copy_action_to_msg_buffer(combat_selection,0,healing, PHEAL);
           combat_mode = MESSAGE;
@@ -910,31 +910,31 @@ void do_combat(){
           }
         }
         if( item == ITEM_FRUIT ){
-          party[combat_mode].health+=party[combat_mode].level;//Heal 10%
+          party[combat_mode].health+=2*party[combat_mode].level;//Heal 10%
           inventory[item]--;
-          copy_action_to_msg_buffer(combat_mode,0,party[combat_mode].level, PHEAL);
+          copy_action_to_msg_buffer(combat_mode,0,2*party[combat_mode].level, PHEAL);
         }else if( item == ITEM_BREAD ){
-          party[combat_mode].health+=party[combat_mode].level*3/2;//Heal 15%
+          party[combat_mode].health+=3*party[combat_mode].level;//Heal 15%
           inventory[item]--;
-          copy_action_to_msg_buffer(combat_mode,0,party[combat_mode].level*3/2, PHEAL);
+          copy_action_to_msg_buffer(combat_mode,0,3*party[combat_mode].level, PHEAL);
         }else if( item == ITEM_MEAT ){
-          party[combat_mode].bonus_damage++; // Meat increases damage
+          party[combat_mode].bonus_damage+=4; // Meat increases damage
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,1, PDAMAGE);
         }else if( item == ITEM_TONIC ){
-          party[combat_mode].health+=(party[combat_mode].level*10/2);//Heal 50%
+          party[combat_mode].health+=10*party[combat_mode].level;//Heal 50%
           inventory[item]--;
-          copy_action_to_msg_buffer(combat_mode,0,(party[combat_mode].level*10/2), PHEAL);
+          copy_action_to_msg_buffer(combat_mode,0,10*party[combat_mode].level, PHEAL);
         }else if( item == ITEM_TEA ){
-          party[combat_mode].bonus_speed++;//Speed up
+          party[combat_mode].bonus_speed+=4;//Speed up
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,1, PSPEED);
         }else if( item == ITEM_LIQUOR ){
-          party[combat_mode].bonus_defense++;// Liquor increases damage resistance
+          party[combat_mode].bonus_defense+=4;// Liquor increases damage resistance
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,1, PDEFENSE);
         }
-        if( party[combat_mode].health > party[combat_mode].level*10 ) party[combat_mode].health = party[combat_mode].level*10;//Cap off healing
+        if( party[combat_mode].health > party[combat_mode].level*20 ) party[combat_mode].health = party[combat_mode].level*20;//Cap off healing
         combat_mode = MESSAGE;
       }
     }else if(gb.buttons.pressed(BTN_B)){
@@ -992,8 +992,8 @@ void do_combat(){
   //If it is an enemy's turn
   else if( combat_mode >= ENEMY1 && combat_mode <= ENEMY3 ){
     int16_t damage = calculate_damage(enemy_buffer[combat_mode-ENEMY1].lvl);
-    //TODO: Right now this assumes all party members are present!  Fix this!
-    uint8_t member = random(3);//Choose which member of the party to attack
+    //Choose which member of the party to attack
+    uint8_t member = party[NURSE].level > 0 ? random(3) : (party[SHADOW].level > 0 ? random(2) : 0 );
     if( nurse_protect_bonus == member ){
       //Damage is reduced by 10% of nurse's level if nurse protects
       damage = party[NURSE].level > damage ? 0 : damage - party[NURSE].level;
