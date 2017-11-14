@@ -69,39 +69,7 @@ uint8_t huff_tree_get(uint8_t item){
   return pgm_read_byte((uint8_t*)&huff_tree[huff_tree_index][item]);
 }
 
-void dialogue_seek(uint16_t index){
-  uint16_t dindex = 0; 
-  uint8_t tmp = 0;
-  if( index == 0 ) return;
-  while( true ){
-    tmp = pgm_read_byte((uint8_t*)&dialogue[huff_index]);
-    //Read a single bit
-    if( (tmp & huff_mask) == 0 ){
-      // If bit was zero, go to left node
-      huff_tree_index = huff_tree_get(1);
-    }else{
-      // If bit was one, go to right node
-      huff_tree_index = huff_tree_get(2);
-    }
-    //If we are at a leaf node, we have a complete code
-    if( huff_tree_get(0) != 255 ){
-      huff_tree_index = 0;// Return to root
-      dindex++;
-    }
-    //Advance to next bit
-    huff_mask >>= 1; //Shift mask
-    if( huff_mask == 0 ){
-      //If mask has read every bit, it's time to shift to the next byte
-      huff_index++;
-      huff_mask = 0x80;
-    }
-    if( dindex == index ){
-      return; //We have reached the correct index
-    }
-  }
-}
-
-void fill_dialogue_buffer(){
+void fill_dialogue_buffer(uint16_t seek_index){
   uint8_t tmp, offset = 0;
   while( true ){
     tmp = pgm_read_byte((uint8_t*)&dialogue[huff_index]);
@@ -116,10 +84,15 @@ void fill_dialogue_buffer(){
     //If we are at a leaf node, we have a complete code
     tmp = huff_tree_get(0);
     if( tmp != 255 ){
-      combat_message[offset++] = tmp;
-      //If the character we just read was a zero byte, we are done loading the buffer
-      if( tmp == '\0' ){
-        return;
+      // If we're still seeking to our desired start location
+      if( seek_index > 0 ){
+        seek_index--;
+      }else{
+        combat_message[offset++] = tmp;
+        //If the character we just read was a zero byte, we are done loading the buffer
+        if( tmp == '\0' ){
+          return;
+        }
       }
       huff_tree_index = 0;// Return to root
     }
@@ -141,10 +114,9 @@ void display_dialogue(uint16_t index, uint8_t len, uint8_t who, const char name_
   huff_mask = 0x80;
   huff_index = 0;
   huff_tree_index = 0;
-  // Seek to index (from start!)
-  dialogue_seek(dialogue_index);
-  //Fill dialogue buffer with first set of dialogue
-  fill_dialogue_buffer();
+  // Seek to index (from start!) and
+  // fill dialogue buffer with first set of dialogue
+  fill_dialogue_buffer(dialogue_index);
   mode = DIALOGUE;
 }
 
@@ -175,7 +147,7 @@ void step_dialogue(){
       dialogue_remaining--;
       // This time we fill the dialogue buffer we will start from the end of the
       // previous dialogue
-      fill_dialogue_buffer();
+      fill_dialogue_buffer(0);
     }
   }
 }
