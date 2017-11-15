@@ -151,7 +151,7 @@ void loop() {
             game_status[STATUS_MAIN] = 14;
             display_dialogue(TXT_ENEMY,TXT_ENEMY_LEN,CAPTAIN,enemy_names);
           }
-          //FATHER'S RESIDENCE---THUG MINIBOSS
+          //LARGE SHIP---CAPTAIN BOSS
           else if( game_status[STATUS_MAIN] == 14 ){
             game_status[STATUS_MAIN] = 15;
             meta_mode = CAPTAIN;//Boss id stored in meta_mode
