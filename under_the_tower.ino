@@ -80,10 +80,10 @@ void loop() {
           }else if( game_status[STATUS_MAIN] == 1 && dudey < 41*8 ){
             game_status[STATUS_MAIN] = 2;
             display_dialogue(TXT_SDW_CATPAW,TXT_SDW_CATPAW_LEN,SHADOW,player_names);
-          }else if( game_status[STATUS_MAIN] == 12 && dudex > 55*8 && dudey < 45*8 ){
+          }/*else if( game_status[STATUS_MAIN] == 12 && dudex > 55*8 && dudey < 45*8 ){
             game_status[STATUS_MAIN] = 13;
             display_dialogue(TXT_SDW_SHIP,TXT_SDW_SHIP_LEN,SHADOW,player_names);
-          }
+          }*/
         }
         break;
       case TO_DUNGEON:
