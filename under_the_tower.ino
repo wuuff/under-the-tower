@@ -6,6 +6,7 @@
 #include "dialogue.h"
 #include "battle.h"
 #include "dungeon.h"
+#include "events.h"
 #include <Gamebuino.h>
 Gamebuino gb;
 
@@ -91,72 +92,8 @@ void loop() {
         if( transition >= 0 ){
           draw_dungeon();
           step_dungeon();
-          //A really hacky way to implement the bosses
-          //CATPAW---SLAVER DIALOGUE
-          if( game_status[STATUS_MAIN] == 2 && dungeonid == 0 && dungeon_level == 2 ){
-            game_status[STATUS_MAIN] = 3;
-            display_dialogue(TXT_SLAVER,TXT_SLAVER_LEN,SLAVER,enemy_names);
-          }
-          //CATPAW---SLAVER BOSS
-          else if( game_status[STATUS_MAIN] == 3 ){
-            game_status[STATUS_MAIN] = 4;
-            meta_mode = SLAVER;//Boss id stored in meta_mode
-            mode = COMBAT;
-          }
-          //CATPAW---GIRL THANKS
-          else if( game_status[STATUS_MAIN] == 4 ){
-            game_status[STATUS_MAIN] = 5;
-            display_dialogue(TXT_GIRL_THX,TXT_GIRL_THX_LEN,3,player_names);
-          }
-          //CATPAW---SHADOW DIALOGUE
-          if( game_status[STATUS_MAIN] == 5  && dungeon_level == 0 ){
-            game_status[STATUS_MAIN] = 6;
-            display_dialogue(TXT_SDW_BATTLE,TXT_SDW_BATTLE_LEN,SHADOW,player_names);
-          }
-          //CATPAW---SHADOW BOSS
-          else if( game_status[STATUS_MAIN] == 6 ){
-            game_status[STATUS_MAIN] = 7;
-            meta_mode = EN_SHADOW;//Boss id stored in meta_mode
-            mode = COMBAT;
-          }
-          //CATPAW---SHADOW JOINS
-          else if( game_status[STATUS_MAIN] == 7 ){
-            game_status[STATUS_MAIN] = 8;
-            display_dialogue(TXT_SDW_WIN,TXT_SDW_WIN_LEN,SHADOW,player_names);
-            party[SHADOW].level = 8;//Add shadow to party
-          }
-          //FATHER'S RESIDENCE---GIRL WARNING
-          else if( game_status[STATUS_MAIN] == 8 && dungeonid == 1 && dungeon_level == 0 ){
-            game_status[STATUS_MAIN] = 9;
-            display_dialogue(TXT_GIRL_FATHER,TXT_GIRL_FATHER_LEN,3,player_names);
-          }
-          //FATHER'S RESIDENCE---ENEMY ALERT
-          else if( game_status[STATUS_MAIN] == 9 && dungeonid == 1 && dungeon_level == 2 ){
-            game_status[STATUS_MAIN] = 10;
-            display_dialogue(TXT_ENEMY,TXT_ENEMY_LEN,THUG,enemy_names);
-          }
-          //FATHER'S RESIDENCE---THUG MINIBOSS
-          else if( game_status[STATUS_MAIN] == 10 ){
-            game_status[STATUS_MAIN] = 11;
-            meta_mode = THUG;//Boss id stored in meta_mode
-            mode = COMBAT;
-          }
-          //FATHER'S RESIDENCE---FATHER THANKS
-          else if( game_status[STATUS_MAIN] == 11 ){
-            game_status[STATUS_MAIN] = 12;
-            display_dialogue(TXT_FATHER,TXT_FATHER_LEN,4,player_names);
-          }
-          //LARGE SHIP---ENEMY ALERT
-          else if( game_status[STATUS_MAIN] == 13 && dungeonid == 4 && dungeon_level == 3 ){
-            game_status[STATUS_MAIN] = 14;
-            display_dialogue(TXT_ENEMY,TXT_ENEMY_LEN,CAPTAIN,enemy_names);
-          }
-          //LARGE SHIP---CAPTAIN BOSS
-          else if( game_status[STATUS_MAIN] == 14 ){
-            game_status[STATUS_MAIN] = 15;
-            meta_mode = CAPTAIN;//Boss id stored in meta_mode
-            mode = COMBAT;
-          }
+
+          check_events();//Dialogue and boss battles encountered in dungeons
         }
         break;
       case TO_COMBAT:
