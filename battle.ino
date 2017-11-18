@@ -267,13 +267,14 @@ const char player_names[][8] PROGMEM = {
 "SHADOW",
 "NURSE",
 "GIRL", //Not actually playable characters, but I needed the text somewhere....
-"FATHER"
+"FATHER",
+"",
 };
 
 struct character party[3] = {
   {1,20,4,0,0,0,0}, // Mudlark
   {0,160,3,0,0,0,0}, // Shadow
-  {0,640,4,0,0,0,0} // Nurse
+  {0,200,4,0,0,0,0} // Nurse
 };
 
 uint8_t shadow_stealth_bonus = 0;
