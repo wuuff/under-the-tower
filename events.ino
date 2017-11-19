@@ -23,7 +23,7 @@ struct boss_event{
   uint8_t boss_id;
 };
 
-#define NUM_DIALOGUE_EVENTS 44
+#define NUM_DIALOGUE_EVENTS 58
 const dialogue_event dialogue_events[NUM_DIALOGUE_EVENTS] PROGMEM = {
   //CATPAW---SLAVER DIALOGUE
   {STATUS_MAIN,2,0,2,TXT_SLAVER,TXT_SLAVER_LEN,SLAVER},
@@ -97,9 +97,37 @@ const dialogue_event dialogue_events[NUM_DIALOGUE_EVENTS] PROGMEM = {
   //TOWER---ENDING TEXT
   {STATUS_MAIN,35,10,24,TXT_ENDING,TXT_ENDING_LEN,5},
   {STATUS_MAIN,35,11,24,TXT_ENDING,TXT_ENDING_LEN,5},
+  //FIGHTING BAR---WELCOME
+  {STATUS_BAR,0,2,0,TXT_BAR,TXT_BAR_LEN,6},
+  //FIGHTING BAR---TOP FIGHTER
+  {STATUS_BAR,1,2,5,TXT_FIGHTER,TXT_FIGHTER_LEN,MUSCLER},
+  //SMALL SHIP---OLD CAPTAIN
+  {STATUS_MUTINY,0,3,0,TXT_MUTINY,TXT_MUTINY_LEN,CAPTAIN},
+  //SMALL SHIP---NEW CAPTAIN
+  {STATUS_MUTINY,1,3,1,TXT_MUTINEER,TXT_MUTINEER_LEN,SAILOR},
+  //SMALL SHIP---OLD CAPTAIN THANKS
+  {STATUS_MUTINY,3,3,0,TXT_CAPTAIN_THX,TXT_CAPTAIN_THX_LEN,CAPTAIN},
+  //NORTH WAREHOUSE---FEAR THE RATS
+  {STATUS_RATS,0,8,0,TXT_RATS,TXT_RATS_LEN,6},
+  //NORTH WAREHOUSE---BEHOLD THE RAT
+  {STATUS_RATS,1,8,7,TXT_MEGARAT,TXT_MEGARAT_LEN,5},
+  //NORTH WAREHOUSE---RAT DENOUEMENT
+  {STATUS_RATS,3,8,0,TXT_RAT_THX,TXT_RAT_THX_LEN,6},
+  //SNOB HOUSE---INTRO
+  {STATUS_SNOBS,0,9,0,TXT_SNOBS,TXT_SNOBS_LEN,SNOB},
+  //SNOB HOUSE---RICH
+  {STATUS_SNOBS,1,9,1,TXT_RICH,TXT_RICH_LEN,RICHMAN},
+  //SNOB HOUSE---WOW
+  {STATUS_SNOBS,3,9,0,TXT_SNOB_WOW,TXT_SNOB_WOW_LEN,SNOB},
+  //DOCKS WAREHOUSE---HELP
+  {STATUS_WARES,0,5,0,TXT_WARES,TXT_WARES_LEN,6},
+  //DOCKS WAREHOUSE---ALERT
+  {STATUS_WARES,1,5,3,TXT_ENEMY,TXT_ENEMY_LEN,MUSCLER},
+  //DOCKS WAREHOUSE---THANKS
+  {STATUS_WARES,3,5,0,TXT_WARES_THX,TXT_WARES_THX_LEN,6},
 };
 
-#define NUM_BOSS_EVENTS 6
+#define NUM_BOSS_EVENTS 11
 const boss_event boss_events[NUM_BOSS_EVENTS] PROGMEM = {
   //CATPAW---SLAVER BOSS
   {STATUS_MAIN,3,SLAVER},
@@ -113,6 +141,16 @@ const boss_event boss_events[NUM_BOSS_EVENTS] PROGMEM = {
   {STATUS_MAIN,25,MADMAN},
   //TOWER---LEADER FINAL BOSS
   {STATUS_MAIN,32,LEADER},
+  //FIGHTING BAR---MUSCLER BOSS
+  {STATUS_BAR,2,MUSCLER},
+  //SMALL SHIP---CAPTAIN BOSS
+  {STATUS_MUTINY,2,CAPTAIN},
+  //NORTH WAREHOUSE---MAXIMUM RAT BOSS
+  {STATUS_RATS,2,MAX_RAT},
+  //SNOB HOUSE---RICHMAN BOSS
+  {STATUS_SNOBS,2,RICHMAN},
+  //DOCKS WAREHOUSE---MUSCLER BOSS
+  {STATUS_WARES,2,MUSCLER},
 };
 
 void check_events(){
@@ -140,7 +178,7 @@ void check_events(){
       // Take advantage of having no battles with low-level enemies
       // Therefore, if the indices that we use of each array don't overlap,
       // we can avoid having to specify which array we are using
-      if( event.name_index < 6 ){
+      if( event.name_index < 7 ){
         display_dialogue(event.dialogue_index,event.dialogue_len,event.name_index,player_names);
       }else{
         display_dialogue(event.dialogue_index,event.dialogue_len,event.name_index,enemy_names);

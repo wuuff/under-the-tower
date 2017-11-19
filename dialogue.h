@@ -115,7 +115,7 @@ extern void display_dialogue(uint16_t, uint8_t, uint8_t, const char[][8]);
 #define TXT_MEGARAT_LEN 0
 
 #define TXT_RAT_THX 2121
-#define TXT_RAT_THX 0
+#define TXT_RAT_THX_LEN 0
 
 #define TXT_SNOBS 2149
 #define TXT_SNOBS_LEN 0

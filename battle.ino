@@ -269,6 +269,7 @@ const char player_names[][8] PROGMEM = {
 "GIRL", //Not actually playable characters, but I needed the text somewhere....
 "FATHER",
 "",
+"MAN",
 };
 
 struct character party[3] = {
