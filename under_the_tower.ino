@@ -35,7 +35,6 @@ void setup() {
   //gb.titleScreen(F("Test"));
   //gb.battery.show = false;
   mode = MAIN_MENU;
-  gb.pickRandomSeed();//For random numbers, later
 
   /*for(byte i = 0; i < 16; i++){
     for(byte j = 0; j < 16; j++){
@@ -147,6 +146,7 @@ void loop() {
           menu_selection%=3;
         }
         else if(gb.buttons.pressed(BTN_A)){
+          gb.pickRandomSeed();//For random numbers, later
           if(menu_selection == 1){
             restore_game();
           }

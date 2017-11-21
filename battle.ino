@@ -305,7 +305,7 @@ const char item_names[][8] PROGMEM = {
   "LIQUOR", // 1 damage resist       
 };
 
-unsigned char inventory[6] = {2,1,16,1,16,16};//Each element == how much of each item
+unsigned char inventory[6] = {2,1,0,0,0,1};//Each element == how much of each item
 
 uint8_t next_combat = 32;
 
@@ -355,7 +355,9 @@ const char combat_text[][8] PROGMEM = {
   "PROTECT",
   " DMG UP",
   " DEF UP",
-  "ALL"
+  "ALL",
+  "BAG MAX",
+  " USES ",
 };
 
 #define MUDLARK_MENU 0
@@ -536,6 +538,18 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     offset = append_to_msg_buffer( 9, combat_text, offset );
     combat_message[offset++] = ' ';
     offset = append_to_msg_buffer( amount, item_names, offset );
+    //Check if player has more than max of item in inventory.
+    //If so, we must say that the mudlark consumes it immediately.
+    if( inventory[amount] > 16 ){
+      combat_message[offset++] = '\n';
+      combat_message[offset++] = ' ';
+      offset = append_to_msg_buffer( 16, combat_text, offset );
+      combat_message[offset++] = '\n';
+      combat_message[offset++] = ' ';
+      offset = append_to_msg_buffer( 0, player_names, offset ); //MUDLARK
+      offset = append_to_msg_buffer( 17, combat_text, offset ); // USES 
+      offset = append_to_msg_buffer( amount, item_names, offset );//<item>
+    }
   }else{
     offset = append_to_msg_buffer( 0, combat_text, offset );
   }
@@ -806,14 +820,38 @@ void do_combat(){
         if( random(100) < 25 ){ //Highest chance to get fruit
           inventory[ITEM_FRUIT]++;
           copy_action_to_msg_buffer(0,0,ITEM_FRUIT, PITEM);
+          //If the inventory slot is full, reset to max and consume by mudlark immediately
+          if( inventory[ITEM_FRUIT] > 16 ){
+            inventory[ITEM_FRUIT] = 16;
+            party[MUDLARK].health+=2*party[MUDLARK].level;//Heal 10%
+          }
         }else if( random(100) < 25 ){ //Second highest chance to get bread
           inventory[ITEM_BREAD]++;
           copy_action_to_msg_buffer(0,0,ITEM_BREAD, PITEM);
+          //If the inventory slot is full, reset to max and consume by mudlark immediately
+          if( inventory[ITEM_BREAD] > 16 ){
+            inventory[ITEM_BREAD] = 16;
+            party[MUDLARK].health+=3*party[MUDLARK].level;//Heal 15%
+          }
         }else{ //All the rest of the items have an equal chance
           uint8_t chosen = random(4) + 2;
           inventory[chosen]++;
           copy_action_to_msg_buffer(0,0, chosen, PITEM);
+          //If the inventory slot is full, reset to max and consume by mudlark immediately
+          if( inventory[chosen] > 16 ){
+            inventory[chosen] = 16;
+            if( chosen == ITEM_MEAT ){
+              party[MUDLARK].bonus_damage+=4; // Meat increases damage
+            }else if( chosen == ITEM_TONIC ){
+              party[MUDLARK].health+=10*party[MUDLARK].level;//Heal 50%
+            }else if( chosen == ITEM_TEA ){
+              party[MUDLARK].bonus_speed+=4;//Speed up
+            }else if( chosen == ITEM_LIQUOR ){
+              party[MUDLARK].bonus_defense+=4;// Liquor increases damage resistance
+            }
+          }
         }
+        if( party[MUDLARK].health > party[MUDLARK].level*20 ) party[MUDLARK].health = party[MUDLARK].level*20;//Cap off healing
         combat_mode = MESSAGE;
       }else if( menu_selection == SHADOW_MENU && combat_selection == 2 ){ //Shadow's speed boost
         party[SHADOW].bonus_speed+=3;//Speed up by 3!
@@ -828,11 +866,17 @@ void do_combat(){
         combat_selection = 0;
       }else if( menu_selection == SECONDARY_MENU ){
         if( combat_selection == 0 ){ // FOOD
-          menu_selection = FOOD_MENU;
-          combat_selection = 0;
+          //If the player has any food to eat, only then show the menu
+          if( inventory[0] > 0 || inventory[1] > 0 || inventory[2] > 0 ){
+            menu_selection = FOOD_MENU;
+            combat_selection = 0;
+          }
         }else if( combat_selection == 1 ){ // DRINK
-          menu_selection = DRINK_MENU;
-          combat_selection = 0;
+          //If the player has any drinks to drink, only then show the menu
+          if( inventory[3] > 0 || inventory[4] > 0 || inventory[5] > 0 ){
+            menu_selection = DRINK_MENU;
+            combat_selection = 0;
+          }
         }else{ // 1 == RUN
           if( random(2) == 0 ){
             combat_mode = PRECOMBAT;
