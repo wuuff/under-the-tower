@@ -55,3 +55,7 @@ extern const char enemy_names[][8];
 extern const char menu_text[][8];
 extern void copy_to_buffer(byte index, const char arr[][8]);
 extern struct character party[3];
+extern byte menu_selection;
+
+#define INVENTORY_SIZE 6
+extern unsigned char inventory[];

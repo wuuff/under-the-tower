@@ -305,8 +305,6 @@ const char item_names[][8] PROGMEM = {
   "LIQUOR", // 1 damage resist       
 };
 
-#define INVENTORY_SIZE 6
-
 unsigned char inventory[6] = {2,1,16,1,16,16};//Each element == how much of each item
 
 uint8_t next_combat = 32;

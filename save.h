@@ -8,3 +8,6 @@
 
 //All game status variables
 extern int8_t game_status[];
+
+extern void save_game();
+extern void restore_game();

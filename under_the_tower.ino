@@ -13,20 +13,6 @@ Gamebuino gb;
 #define SCREEN_WIDTH 84
 #define SCREEN_HEIGHT 48
 
-void setup() {
-  // put your setup code here, to run once:
-  gb.begin();
-  gb.titleScreen(F("Test"));
-  gb.battery.show = false;
-  gb.pickRandomSeed();//For random numbers, later
-
-  /*for(byte i = 0; i < 16; i++){
-    for(byte j = 0; j < 16; j++){
-      map_cache[i][j] = pgm_read_byte(&world[i*64+j]);
-    }
-  }*/
-}
-
 #define WORLD 0
 #define COMBAT 1
 #define DUNGEON 2
@@ -35,10 +21,28 @@ void setup() {
 #define TO_WORLD 4
 #define TO_COMBAT 5
 #define TO_DUNGEON 6
+//Menu mode
+#define MAIN_MENU 7
+#define PAUSE_MENU 8
 
 #define TRANSITION_DIFF 4
 
 byte mode = WORLD;
+
+void setup() {
+  // put your setup code here, to run once:
+  gb.begin();
+  //gb.titleScreen(F("Test"));
+  //gb.battery.show = false;
+  mode = MAIN_MENU;
+  gb.pickRandomSeed();//For random numbers, later
+
+  /*for(byte i = 0; i < 16; i++){
+    for(byte j = 0; j < 16; j++){
+      map_cache[i][j] = pgm_read_byte(&world[i*64+j]);
+    }
+  }*/
+}
 
 void step_transition(){
   uint8_t i;
@@ -113,11 +117,85 @@ void loop() {
         else
           draw_dungeon();
         step_dialogue();
+        break;
+      case MAIN_MENU:
+        gb.display.cursorX = SCREEN_WIDTH/2-7*4;
+        gb.display.cursorY = 6;
+        gb.display.println(F("UNDER THE TOWER"));
+        gb.display.cursorX = SCREEN_WIDTH/2-2*4;
+        gb.display.cursorY = SCREEN_HEIGHT/2;
+        gb.display.println(F("NEW"));
+        gb.display.cursorX = SCREEN_WIDTH/2-2*4;
+        gb.display.println(F("LOAD"));
+        gb.display.cursorX = SCREEN_WIDTH/2-2*4;
+        gb.display.println(F("QUIT"));
+        gb.display.cursorX = SCREEN_WIDTH/2-3*4;
+        gb.display.cursorY = SCREEN_HEIGHT/2;
+        if(menu_selection == 1){
+          gb.display.cursorY += 6;          
+        }
+        if(menu_selection == 2){
+          gb.display.cursorY += 12;          
+        }
+        gb.display.print(F("\20"));
+        if(gb.buttons.pressed(BTN_UP)){
+          menu_selection--;
+          if( menu_selection == 255 ) menu_selection = 2;
+        }
+        else if(gb.buttons.pressed(BTN_DOWN)){
+          menu_selection++;
+          menu_selection%=3;
+        }
+        else if(gb.buttons.pressed(BTN_A)){
+          if(menu_selection == 1){
+            restore_game();
+          }
+          else if(menu_selection == 2){
+            gb.changeGame();
+          }
+          else{
+            mode = WORLD;
+          }
+        }
+        break;
+      case PAUSE_MENU:
+        gb.display.cursorX = SCREEN_WIDTH/2-3*4;
+        gb.display.cursorY = 6;
+        gb.display.println(F("PAUSED"));
+        gb.display.cursorX = SCREEN_WIDTH/2-2*4;
+        gb.display.cursorY = SCREEN_HEIGHT/2;
+        gb.display.println(F("BACK"));
+        if( meta_mode == WORLD ){
+          gb.display.cursorX = SCREEN_WIDTH/2-2*4;
+          gb.display.println(F("SAVE"));
+        }
+        gb.display.cursorX = SCREEN_WIDTH/2-3*4;
+        gb.display.cursorY = SCREEN_HEIGHT/2;
+        if(menu_selection == 1){
+          gb.display.cursorY += 6;          
+        }
+        gb.display.print(F("\20"));
+        if(meta_mode == WORLD && gb.buttons.pressed(BTN_UP)){
+          menu_selection--;
+          if( menu_selection == 255 ) menu_selection = 1;
+        }
+        else if(meta_mode == WORLD && gb.buttons.pressed(BTN_DOWN)){
+          menu_selection++;
+          menu_selection%=2;
+        }
+        else if(gb.buttons.pressed(BTN_A)){
+          if(menu_selection == 1){
+            save_game();
+          }
+          mode = meta_mode;
+        }
+        break;
     }
 
-    if(gb.buttons.pressed(BTN_C)){
-      gb.titleScreen(F("Paused"));
-      gb.battery.show = false;
+    if(mode != PAUSE_MENU && gb.buttons.pressed(BTN_C)){
+      menu_selection = 0;
+      meta_mode = mode;
+      mode = PAUSE_MENU;
     }
   }
 }
