@@ -305,6 +305,8 @@ const char item_names[][8] PROGMEM = {
   "LIQUOR", // 1 damage resist       
 };
 
+#define INVENTORY_MAX 8
+
 unsigned char inventory[6] = {2,1,0,0,0,1};//Each element == how much of each item
 
 uint8_t next_combat = 32;
@@ -540,7 +542,7 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     offset = append_to_msg_buffer( amount, item_names, offset );
     //Check if player has more than max of item in inventory.
     //If so, we must say that the mudlark consumes it immediately.
-    if( inventory[amount] > 16 ){
+    if( inventory[amount] > INVENTORY_MAX ){
       combat_message[offset++] = '\n';
       combat_message[offset++] = ' ';
       offset = append_to_msg_buffer( 16, combat_text, offset );
@@ -743,6 +745,10 @@ void do_combat(){
             step_forward = 0;
             break;
           }
+          //Loss condition---if any party member is dead
+          if( party[i].health == 0 ){
+            mode = GAME_OVER;
+          }
         }
         if( step_forward )
           do_combat_step();
@@ -821,16 +827,16 @@ void do_combat(){
           inventory[ITEM_FRUIT]++;
           copy_action_to_msg_buffer(0,0,ITEM_FRUIT, PITEM);
           //If the inventory slot is full, reset to max and consume by mudlark immediately
-          if( inventory[ITEM_FRUIT] > 16 ){
-            inventory[ITEM_FRUIT] = 16;
+          if( inventory[ITEM_FRUIT] > INVENTORY_MAX ){
+            inventory[ITEM_FRUIT] = INVENTORY_MAX;
             party[MUDLARK].health+=2*party[MUDLARK].level;//Heal 10%
           }
         }else if( random(100) < 25 ){ //Second highest chance to get bread
           inventory[ITEM_BREAD]++;
           copy_action_to_msg_buffer(0,0,ITEM_BREAD, PITEM);
           //If the inventory slot is full, reset to max and consume by mudlark immediately
-          if( inventory[ITEM_BREAD] > 16 ){
-            inventory[ITEM_BREAD] = 16;
+          if( inventory[ITEM_BREAD] > INVENTORY_MAX ){
+            inventory[ITEM_BREAD] = INVENTORY_MAX;
             party[MUDLARK].health+=3*party[MUDLARK].level;//Heal 15%
           }
         }else{ //All the rest of the items have an equal chance
@@ -838,8 +844,8 @@ void do_combat(){
           inventory[chosen]++;
           copy_action_to_msg_buffer(0,0, chosen, PITEM);
           //If the inventory slot is full, reset to max and consume by mudlark immediately
-          if( inventory[chosen] > 16 ){
-            inventory[chosen] = 16;
+          if( inventory[chosen] > INVENTORY_MAX ){
+            inventory[chosen] = INVENTORY_MAX;
             if( chosen == ITEM_MEAT ){
               party[MUDLARK].bonus_damage+=4; // Meat increases damage
             }else if( chosen == ITEM_TONIC ){
@@ -996,7 +1002,7 @@ void do_combat(){
 
 
 
-      if( menu_selection == ENEMY_MENU || menu_selection == SECONDARY_MENU ){
+      if( menu_selection == ENEMY_MENU || menu_selection == ALLY_MENU || menu_selection == SECONDARY_MENU ){
         //since the combat mode and menu selection values line up for the party
         //members, we can do this to switch back to the right primary menu
         //depending on which party member's turn it is
@@ -1054,7 +1060,7 @@ void do_combat(){
     }
     
     if( damage > party[member].health ){
-      party[member].health = 0; // TODO: loss conditions
+      party[member].health = 0;
     }else{
       party[member].health-=damage;
     }
@@ -1062,11 +1068,11 @@ void do_combat(){
   }
 
   //DEBUG TODO: remove
-  gb.display.cursorX = 0;
+  /*gb.display.cursorX = 0;
   gb.display.cursorY = 6;
   gb.display.println(enemy_buffer[1].nme);
   gb.display.println(enemy_buffer[1].lvl);
-  /*gb.display.print((char)(combat_mode+'0'));
+  gb.display.print((char)(combat_mode+'0'));
   gb.display.print(' ');
   gb.display.print((char)(mudlark_level+'0'));
   gb.display.print(' ');

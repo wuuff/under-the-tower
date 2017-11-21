@@ -24,6 +24,7 @@ Gamebuino gb;
 //Menu mode
 #define MAIN_MENU 7
 #define PAUSE_MENU 8
+#define GAME_OVER 9
 
 #define TRANSITION_DIFF 4
 
@@ -190,9 +191,19 @@ void loop() {
           mode = meta_mode;
         }
         break;
+      case GAME_OVER:
+        gb.display.cursorX = SCREEN_WIDTH/2-4*4;
+        gb.display.cursorY = 6;
+        gb.display.println(F("GAME OVER"));
+        gb.display.cursorX = SCREEN_WIDTH/2-3*4;
+        gb.display.cursorY = SCREEN_HEIGHT/2;
+        gb.display.println(F("\20LOAD"));
+        if(gb.buttons.pressed(BTN_A)){
+          restore_game();
+        }
     }
 
-    if(mode != PAUSE_MENU && mode != TO_COMBAT && mode != COMBAT && gb.buttons.pressed(BTN_C)){
+    if(mode != PAUSE_MENU && mode != TO_COMBAT && mode != COMBAT && mode != GAME_OVER && gb.buttons.pressed(BTN_C)){
       menu_selection = 0;
       meta_mode = mode;
       mode = PAUSE_MENU;
