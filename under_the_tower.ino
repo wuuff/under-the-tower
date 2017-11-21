@@ -192,7 +192,7 @@ void loop() {
         break;
     }
 
-    if(mode != PAUSE_MENU && gb.buttons.pressed(BTN_C)){
+    if(mode != PAUSE_MENU && mode != TO_COMBAT && mode != COMBAT && gb.buttons.pressed(BTN_C)){
       menu_selection = 0;
       meta_mode = mode;
       mode = PAUSE_MENU;

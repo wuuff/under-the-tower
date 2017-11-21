@@ -32,39 +32,39 @@ struct min_enemy{
 //that code for a special case with the name!  Therefore, this
 //approach is a bit inefficient because refactoring is a huge chore.
 const struct min_enemy enemies[] PROGMEM = {
-  {1,5,1},
-  {1,4,0},
-  {2,3,0},
-  {4,2,0},
-  {4,5,1},
-  {5,4,0},
-  {5,5,2},
-  {8,5,0},
-  {8,6,1},
-  {9,4,0},
-  {11,3,0},
-  {10,5,0},
-  {15,4,0},
-  {14,7,1},
-  {15,5,0},
-  {18,3,2},
-  {20,2,2},
+  {1,5,1}, //RAT
+  {1,4,0}, //SCAMP
+  {2,3,0}, //RUFFIAN
+  {4,2,0}, //THUG
+  {4,5,1}, //BIG RAT
+  {5,4,0}, //PATRON
+  {5,5,2}, //BOUNCER
+  {10,5,0}, //SLAVER (boss)
+  {8,6,1}, //SEA RAT
+  {9,4,0}, //SWABBIE
+  {11,3,0}, //SAILOR
+  {10,5,0}, //SKIPPER
+  {20,4,0}, //CAPTAIN (boss)
+  {14,7,1}, //BAD RAT
+  {15,5,0}, //WATCHER
+  {19,3,2}, //BRUISER (boss/enemy)
+  {24,2,2}, //MUSCLER (boss/enemy)
   //{25,3,2},  //Remove OVERMAN
-  {25,4,0},
-  {26,5,0},
-  {26,6,0},
-  {26,7,0},
-  {32,7,0},
-  {30,7,1},
-  {32,3,0},
-  {35,2,0},
-  {36,7,1},
-  {38,4,0},
-  {42,2,0},
-  {40,4,0},
-  {50,7,0},
-  {1,2,3},
-  {8,7,0},
+  {25,4,0}, //DOCTOR
+  {26,5,0}, //PATIENT
+  {26,6,0}, //SUBJECT
+  {26,7,0}, //MUTANT
+  {32,8,0}, //MADMAN (boss)
+  {30,7,1}, //WOW RAT
+  {34,3,0}, //SNOB
+  {37,2,0}, //RICHMAN
+  {42,8,1}, //MAX RAT (boss)
+  {40,4,0}, //GUARD
+  {45,2,0}, //GOLEM
+  {42,5,0}, //OFFICER
+  {50,8,0}, //LEADER (boss)
+  {1,2,3}, //CRAB
+  {10,7,0}, //SHADOW (boss)
 };
 
 const char enemy_names[][8] PROGMEM = {
@@ -847,7 +847,7 @@ void do_combat(){
             }else if( chosen == ITEM_TEA ){
               party[MUDLARK].bonus_speed+=4;//Speed up
             }else if( chosen == ITEM_LIQUOR ){
-              party[MUDLARK].bonus_defense+=4;// Liquor increases damage resistance
+              party[MUDLARK].bonus_defense+=2;// Liquor increases damage resistance
             }
           }
         }
@@ -880,7 +880,7 @@ void do_combat(){
         }else{ // 1 == RUN
           if( random(2) == 0 ){
             combat_mode = PRECOMBAT;
-            mode = WORLD;
+            mode = meta_mode;
           }else{
             combat_message[append_to_msg_buffer( 7, combat_text, 0 )] = 0;
             combat_mode = MESSAGE;
@@ -974,7 +974,7 @@ void do_combat(){
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,1, PSPEED);
         }else if( item == ITEM_LIQUOR ){
-          party[combat_mode].bonus_defense+=4;// Liquor increases damage resistance
+          party[combat_mode].bonus_defense+=2;// Liquor increases damage resistance
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,1, PDEFENSE);
         }
@@ -1040,16 +1040,16 @@ void do_combat(){
     uint8_t member = party[NURSE].level > 0 ? random(3) : (party[SHADOW].level > 0 ? random(2) : 0 );
     if( nurse_protect_bonus == member ){
       //Damage is reduced by 10% of nurse's level if nurse protects
-      damage = party[NURSE].level > damage ? 0 : damage - party[NURSE].level;
+      damage = party[NURSE].level >= damage ? 1 : damage - party[NURSE].level;
       // Reduce damage by an extra amount of (5% of reduced damage + 1) * bonus_defense 
       damage -= (damage/10/2 + 1)*party[NURSE].bonus_defense;
-      if( damage < 0 ) damage = 0;
+      if( damage <= 0 ) damage = 1;
       copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, PROTECT);
       member = NURSE; //Nurse takes damage instead
     }else{
       // Reduce damage by (5% of original damage + 1) * bonus_defense 
       damage -= (damage/10/2 + 1)*party[member].bonus_defense;
-      if( damage < 0 ) damage = 0;
+      if( damage <= 0 ) damage = 1;
       copy_action_to_msg_buffer(enemy_buffer[combat_mode-ENEMY1].nme,member,damage, EN2PL);
     }
     
