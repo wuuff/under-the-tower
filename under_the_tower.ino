@@ -25,6 +25,7 @@ Gamebuino gb;
 #define MAIN_MENU 7
 #define PAUSE_MENU 8
 #define GAME_OVER 9
+#define YOU_WIN 10
 
 #define TRANSITION_DIFF 4
 
@@ -64,9 +65,19 @@ void step_transition(){
   }
 }
 
+void print_progress(){
+  uint16_t progress = 0;
+  for( uint8_t i = 0; i < 6; i++ ){
+    progress += game_status[i];
+  }
+  progress = (progress * 100) / (progress + (36+3+4+4+4+4));
+  gb.display.cursorX = SCREEN_WIDTH/2-2*4;
+  gb.display.cursorY = SCREEN_HEIGHT-6;
+  gb.display.print(progress);
+  gb.display.print(F("%"));
+}
+
 void loop() {
-  uint16_t progress;
-  // put your main code here, to run repeatedly:
   if(gb.update()){
     switch( mode ){
       case TO_WORLD:
@@ -177,15 +188,7 @@ void loop() {
           gb.display.cursorY += 6;          
         }
         gb.display.print(F("\20"));
-        progress = 0;
-        for( uint8_t i = 0; i < 6; i++ ){
-          progress += game_status[i];
-        }
-        progress = (progress * 100) / (progress + (36+3+4+4+4+4));
-        gb.display.cursorX = SCREEN_WIDTH/2-2*4;
-        gb.display.cursorY = SCREEN_HEIGHT-6;
-        gb.display.print(progress);
-        gb.display.print(F("%"));
+        print_progress();
         if(meta_mode == WORLD && gb.buttons.pressed(BTN_UP)){
           menu_selection--;
           if( menu_selection == 255 ) menu_selection = 1;
@@ -211,6 +214,12 @@ void loop() {
         if(gb.buttons.pressed(BTN_A)){
           restore_game();
         }
+        break;
+      case YOU_WIN:
+        gb.display.cursorX = SCREEN_WIDTH/2-3*4;
+        gb.display.cursorY = SCREEN_HEIGHT-6;
+        gb.display.println(F("YOU WIN"));
+        print_progress();
     }
 
     if(mode != PAUSE_MENU && mode != TO_COMBAT && mode != COMBAT && mode != GAME_OVER && gb.buttons.pressed(BTN_C)){

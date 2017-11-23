@@ -1,5 +1,6 @@
 #include "dialogue.h"
 #include "battle.h"
+#include "save.h"
 
 const uint8_t huff_tree[][3] PROGMEM = {
 {255,1,24,},
@@ -145,7 +146,11 @@ void step_dialogue(){
     gb.sound.playOK();
     if( dialogue_remaining == 0 ){
       // If dialogue is done, return to world mode
-      mode = meta_mode;
+      if( game_status[STATUS_MAIN] == 36 ){
+        mode = YOU_WIN;
+      }else{
+        mode = meta_mode;
+      }
     }else{
       // If dialogue is not done, move to next chunk of text
       dialogue_remaining--;
