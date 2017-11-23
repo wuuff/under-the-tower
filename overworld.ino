@@ -734,8 +734,8 @@ byte worldframe = 0;
 
 void draw_world(){
   uint8_t tile;
-  gb.display.println(dudex/8 - 6);
-  gb.display.println(dudey/8 - 4);
+  //gb.display.println(dudex/8 - 6);
+  //gb.display.println(dudey/8 - 4);
   //Signed because we may seek off the edge of the map
   for( int8_t y = dudey/8 - 4; y <= dudey/8 + 4; y++ ){
     for( int8_t x = dudex/8 - 6; x <= dudex/8 + 6; x++ ){

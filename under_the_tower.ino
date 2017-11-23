@@ -65,6 +65,7 @@ void step_transition(){
 }
 
 void loop() {
+  uint16_t progress;
   // put your main code here, to run repeatedly:
   if(gb.update()){
     switch( mode ){
@@ -176,6 +177,15 @@ void loop() {
           gb.display.cursorY += 6;          
         }
         gb.display.print(F("\20"));
+        progress = 0;
+        for( uint8_t i = 0; i < 6; i++ ){
+          progress += game_status[i];
+        }
+        progress = (progress * 100) / (progress + (36+3+4+4+4+4));
+        gb.display.cursorX = SCREEN_WIDTH/2-2*4;
+        gb.display.cursorY = SCREEN_HEIGHT-6;
+        gb.display.print(progress);
+        gb.display.print(F("%"));
         if(meta_mode == WORLD && gb.buttons.pressed(BTN_UP)){
           menu_selection--;
           if( menu_selection == 255 ) menu_selection = 1;

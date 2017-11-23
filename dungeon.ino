@@ -286,10 +286,10 @@ void draw_dungeon(){
   }else{
     gb.display.drawBitmap(SCREEN_WIDTH/2-4,SCREEN_HEIGHT/2-4,player_sprites+(1+dudeanimation*3)*10);
   }
-  gb.display.cursorX = 0;
+  /*gb.display.cursorX = 0;
   gb.display.cursorY = 0;
   //gb.display.print(dungeon_map[1][1]-1+((pgm_read_byte(&(dungeons[dungeonid].theme))*NUM_DUN_TILES)*10));
-  gb.display.println(dungeonid);
+  gb.display.println(dungeonid);*/
 }
 
 byte test_collision(byte dir){

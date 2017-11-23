@@ -382,6 +382,7 @@ const char combat_text[][8] PROGMEM = {
 #define MESSAGE 6
 #define VICTORY 7
 #define POSTCOMBAT 8 // Used for allocating xp to allies
+#define DEFEAT 9
 
 char combat_mode = PRECOMBAT;
 byte menu_selection = 0;
@@ -486,6 +487,7 @@ uint8_t append_to_msg_buffer(uint8_t index, const char arr[][8], uint8_t offset)
 #define PDAMAGE 8
 #define PDEFENSE 9
 #define HEALALL 10
+#define PFALL 11
 
 //TODO: space optimize this
 void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uint8_t type){
@@ -507,6 +509,11 @@ void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uin
     offset = append_to_msg_buffer( source, enemy_names, offset );
   }else if( type == EFALL ){
     offset = append_to_msg_buffer( source, enemy_names, offset );
+    offset = append_to_msg_buffer( 4, combat_text, offset );
+    combat_message[offset] = '\0';
+    return;
+  }else if( type == PFALL ){
+    offset = append_to_msg_buffer( source, player_names, offset );
     offset = append_to_msg_buffer( 4, combat_text, offset );
     combat_message[offset] = '\0';
     return;
@@ -712,7 +719,7 @@ void do_combat(){
   }
 
   //If a message is displayed (dismissing the message steps combat forward)
-  if( combat_mode == MESSAGE || combat_mode == VICTORY ){
+  if( combat_mode == MESSAGE || combat_mode == VICTORY || combat_mode == DEFEAT ){
      gb.display.cursorX = 4;
      gb.display.cursorY = SCREEN_HEIGHT/2;
      gb.display.print(combat_message);
@@ -728,6 +735,11 @@ void do_combat(){
             combat_selection = 0;// Select mudlark to give xp to
             give_xp();
           }
+          return;
+        }
+        if( combat_mode == DEFEAT ){
+          combat_mode = PRECOMBAT;
+          mode = GAME_OVER;
           return;
         }
         //First check if all enemies have died
@@ -747,7 +759,10 @@ void do_combat(){
           }
           //Loss condition---if any party member is dead
           if( party[i].health == 0 ){
-            mode = GAME_OVER;
+            copy_action_to_msg_buffer(i,0,0,PFALL);
+            step_forward = 0;
+            combat_mode = DEFEAT;
+            break;
           }
         }
         if( step_forward )
@@ -823,7 +838,7 @@ void do_combat(){
         // TODO: Display how much all heal by, now that the heal amount is unified by the nurse's level
         combat_mode = MESSAGE;
       }else if( menu_selection == MUDLARK_MENU && combat_selection == 2 ){ //Scavenge
-        if( random(100) < 25 ){ //Highest chance to get fruit
+        if( random(100) < 30 ){ //Highest chance to get fruit
           inventory[ITEM_FRUIT]++;
           copy_action_to_msg_buffer(0,0,ITEM_FRUIT, PITEM);
           //If the inventory slot is full, reset to max and consume by mudlark immediately
@@ -831,7 +846,7 @@ void do_combat(){
             inventory[ITEM_FRUIT] = INVENTORY_MAX;
             party[MUDLARK].health+=2*party[MUDLARK].level;//Heal 10%
           }
-        }else if( random(100) < 25 ){ //Second highest chance to get bread
+        }else if( random(100) < 30 ){ //Second highest chance to get bread
           inventory[ITEM_BREAD]++;
           copy_action_to_msg_buffer(0,0,ITEM_BREAD, PITEM);
           //If the inventory slot is full, reset to max and consume by mudlark immediately
@@ -994,10 +1009,10 @@ void do_combat(){
 
 
       //This is for debugging  TODO: remove
-      if( menu_selection == MUDLARK_MENU ){
+      /*if( menu_selection == MUDLARK_MENU ){
         combat_mode = PRECOMBAT;
         mode = meta_mode;
-      }
+      }*/
 
 
 
