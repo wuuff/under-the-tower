@@ -125,8 +125,6 @@ uint16_t dialogue_index;
 uint8_t dialogue_remaining;
 
 void step_dialogue(){
-  worldframe++;
-  worldframe%=8;
   gb.display.setColor(WHITE);
   gb.display.fillRect(0,SCREEN_HEIGHT/2-1,SCREEN_WIDTH,SCREEN_HEIGHT/2+1);
   gb.display.setColor(BLACK);

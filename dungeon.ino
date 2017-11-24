@@ -378,15 +378,15 @@ void step_dungeon(){
   
   player_moving = 0;
   
-  
-  uint8_t collision = 0;
 
-    
+  /*  
   dudeframe++;
   dudeframe%=7;
 
   worldframe+=1;
-  worldframe%=4;
+  worldframe%=4;*/
+
+  uint8_t collision = 0;
   
   if( gb.buttons.repeat(BTN_UP,1) ){
     collision = test_collision(UP);

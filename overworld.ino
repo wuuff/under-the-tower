@@ -792,13 +792,6 @@ uint8_t test_world_collision(uint8_t dir){
 
 void step_world(){
   player_moving = 0;
-  
-  dudeframe++;
-  dudeframe%=7;
-
-  worldframe++;
-  worldframe%=8;
-  
   if( gb.buttons.repeat(BTN_UP,1) ){
     uint8_t collision = 0;
     collision = test_world_collision(UP);
