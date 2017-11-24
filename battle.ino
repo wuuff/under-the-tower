@@ -391,6 +391,7 @@ char combat_buffer[8] = "\0\0\0\0\0\0\0";
 char combat_message[64];//Max of 64 characters in message, which should be plenty
 int8_t combat_status[6] = {0,0,0,0,0,0};//Determines who moves next
 uint8_t combat_xp = 0;
+uint8_t is_boss = 0;
 
 uint16_t enemy_health[3];
 
@@ -413,9 +414,10 @@ void load_enemy_data(uint8_t index, uint8_t slot){
     //If meta_mode actually contains the boss data
     //It's always the center the first time it's called
     //if( slot == 1 ){ //If it's the center enemy
+      is_boss = 1;
       en_ind = meta_mode;
       en = &(enemies[meta_mode]);
-      meta_mode = DUNGEON;//This will be used to return to the dungeon now
+      meta_mode = DUNGEON;//This will be used to return to the dungeon now (bosses can only be in dungeons)
     //}
     /*else{
       //If it's not the center enemy, we don't want it
@@ -433,6 +435,7 @@ void load_enemy_data(uint8_t index, uint8_t slot){
 void gen_enemies(){
   uint8_t enemy_index = 0;
   combat_xp = 0;
+  is_boss = 0;// Assume it is not a boss until we generate the first enemy
   //Always generate center enemy
   enemy_index = random(3);
   load_enemy_data(enemy_index,1);
@@ -899,7 +902,8 @@ void do_combat(){
             combat_selection = 0;
           }
         }else{ // 1 == RUN
-          if( random(2) == 0 ){
+          //Only allow running as a 50% chance in non-boss battles
+          if( !is_boss && random(2) == 0 ){
             combat_mode = PRECOMBAT;
             mode = meta_mode;
           }else{
