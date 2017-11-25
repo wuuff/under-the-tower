@@ -70,7 +70,7 @@ void print_progress(){
   for( uint8_t i = 0; i < 6; i++ ){
     progress += game_status[i];
   }
-  progress = (progress * 100) / (progress + (36+3+4+4+4+4));
+  progress = (100*progress + (36+3+4+4+4+4)/2)/(36+3+4+4+4+4);
   gb.display.cursorX = SCREEN_WIDTH/2-2*4;
   gb.display.cursorY = SCREEN_HEIGHT-6;
   gb.display.print(progress);

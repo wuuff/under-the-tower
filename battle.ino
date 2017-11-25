@@ -463,7 +463,7 @@ uint8_t is_boss = 0;
 
 uint16_t enemy_health[3];
 
-uint8_t calculate_damage(uint8_t lvl){
+uint16_t calculate_damage(uint8_t lvl){
   return lvl*10/8;
 }
 
@@ -561,7 +561,7 @@ uint8_t append_to_msg_buffer(uint8_t index, const char arr[][8], uint8_t offset)
 #define PFALL 11
 
 //TODO: space optimize this
-void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint8_t amount, uint8_t type){
+void copy_action_to_msg_buffer(uint8_t source, uint8_t dest, uint16_t amount, uint8_t type){
   uint8_t offset = 0;
   if( type == PL2EN || type == PHEAL || type == PSPEED || type == PITEM || type == PDAMAGE || type == PDEFENSE )
     offset = append_to_msg_buffer( source, player_names, offset );
