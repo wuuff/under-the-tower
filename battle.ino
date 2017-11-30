@@ -375,7 +375,7 @@ const char item_names[][8] PROGMEM = {
 
 #define INVENTORY_MAX 8
 
-unsigned char inventory[6] = {2,1,0,0,0,1};//Each element == how much of each item
+unsigned char inventory[6] = {2,1,0,0,1,0};//Each element == how much of each item
 
 uint8_t next_combat = 32;
 
@@ -507,13 +507,13 @@ void gen_enemies(){
   //Always generate center enemy
   enemy_index = random(3);
   load_enemy_data(enemy_index,1);
-  combat_xp+=enemy_buffer[1].lvl * 2;
+  combat_xp+=enemy_buffer[1].lvl;
   enemy_health[1] = enemy_buffer[1].lvl*10;
   //50% chance of left enemy
   if( random(2) == 0 ){
     enemy_index = random(3);
     load_enemy_data(enemy_index,0);
-    combat_xp+=enemy_buffer[0].lvl * 2;
+    combat_xp+=enemy_buffer[0].lvl;
     enemy_health[0] = enemy_buffer[0].lvl*10;
   }else{
     enemy_buffer[0].lvl = -1;
@@ -522,7 +522,7 @@ void gen_enemies(){
   if( random(2) == 0 ){
     enemy_index = random(3);
     load_enemy_data(enemy_index,2);
-    combat_xp+=enemy_buffer[2].lvl * 2;
+    combat_xp+=enemy_buffer[2].lvl;
     enemy_health[2] = enemy_buffer[2].lvl*10;
   }else{
     enemy_buffer[2].lvl = -1;
@@ -897,7 +897,7 @@ void do_combat(){
         combat_message[append_to_msg_buffer( 5, menu_text, 0 )] = 0;
         combat_mode = MESSAGE;
       }else if( menu_selection == NURSE_MENU && combat_selection == 1 ){
-        uint16_t healing = 2*party[NURSE].level; // Heal 10% of NURSE's health for everyone
+        uint16_t healing = party[NURSE].level; // Heal 5% of NURSE's health for everyone
         // Heal an extra amount by (5% of original healing + 1) * bonus_damage
         // Therefore, the nurse's damage bonus is used for healing since she has no attack. 
         healing += (healing/10/2 + 1)*party[NURSE].bonus_damage;
@@ -935,7 +935,7 @@ void do_combat(){
             if( chosen == ITEM_MEAT ){
               party[MUDLARK].bonus_damage+=4; // Meat increases damage
             }else if( chosen == ITEM_TONIC ){
-              party[MUDLARK].health+=10*party[MUDLARK].level;//Heal 50%
+              party[MUDLARK].health+=5*party[MUDLARK].level;//Heal 25%
             }else if( chosen == ITEM_TEA ){
               party[MUDLARK].bonus_speed+=4;//Speed up
             }else if( chosen == ITEM_LIQUOR ){
@@ -1017,7 +1017,7 @@ void do_combat(){
           //Nurse's HEAL ONE ability
           //Remember, this assumes that we are not missing a character---if I add the ability to 
           //revive fallen party members (vs an instant game over) then this will need to change...
-          uint16_t healing = 4*party[NURSE].level;// Heal 20% of NURSE's health
+          uint16_t healing = 3*party[NURSE].level;// Heal 15% of NURSE's health
           // Heal an extra amount by (5% of original healing + 1) * bonus_damage
           // Therefore, the nurse's damage bonus is used for healing since she has no attack. 
           healing += (healing/10/2 + 1)*party[NURSE].bonus_damage;
@@ -1059,7 +1059,7 @@ void do_combat(){
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,1, PDAMAGE);
         }else if( item == ITEM_TONIC ){
-          party[combat_mode].health+=10*party[combat_mode].level;//Heal 50%
+          party[combat_mode].health+=5*party[combat_mode].level;//Heal 25%
           inventory[item]--;
           copy_action_to_msg_buffer(combat_mode,0,10*party[combat_mode].level, PHEAL);
         }else if( item == ITEM_TEA ){
