@@ -1061,7 +1061,7 @@ void do_combat(){
         }else if( item == ITEM_TONIC ){
           party[combat_mode].health+=5*party[combat_mode].level;//Heal 25%
           inventory[item]--;
-          copy_action_to_msg_buffer(combat_mode,0,10*party[combat_mode].level, PHEAL);
+          copy_action_to_msg_buffer(combat_mode,0,5*party[combat_mode].level, PHEAL);
         }else if( item == ITEM_TEA ){
           party[combat_mode].bonus_speed+=4;//Speed up
           inventory[item]--;
@@ -1108,7 +1108,7 @@ void do_combat(){
           mod--;
         }
       }
-    }else if( menu_selection == ENEMY_MENU ){
+    }else if( menu_selection == ALLY_MENU ){
       //Determine how many party members there are so we can
       //wrap the selection cursor around
       mod = 1;
